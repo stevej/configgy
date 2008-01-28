@@ -1,4 +1,4 @@
-package net.lag.configgy;
+package net.lag.configgy
 
 import sorg.testing._
 import util.parsing.input.CharArrayReader
