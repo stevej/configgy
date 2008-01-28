@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+*** GENERATED FROM project.xml - DO NOT EDIT  ***
+***         EDIT ../build.xml INSTEAD         ***
+-->
+<project name="configgy-impl" default="default" basedir=".." xmlns:scalaProject="http://www.netbeans.org/ns/scala-project/1">
+    <target name="default" depends="compile"/>
+    <!-- 
+    ======================
+    INITIALIZATION SECTION 
+    ======================
+    -->
+    <target name="-pre-init">
+        <!-- Empty placeholder for easier customization. -->
+        <!-- You can override this target in the ../build.xml file. -->
+    </target>
+    <target name="-init-properties" depends="-pre-init">
+        <property file="nbproject/private/private.properties"/>
+        <property file="nbproject/project.properties"/>
+        <property environment="env"/>
+        <condition property="scala.home" value="${env.SCALA_HOME}">
+            <isset property="env.SCALA_HOME"/>
+        </condition>
+        <fail unless="scala.home">
+            You must set SCALA_HOME or environment property or scala.home
+            property in nbproject/private/private.properties to point to
+            Scala installation directory.
+        </fail>
+        <property name="build.dir" value="build"/>
+    </target>
+    <target name="init" depends="-pre-init,-init-properties"/>
+    <!-- 
+    ===================
+    COMPILATION SECTION
+    ===================
+    -->
+    <target name="-pre-pre-compile" depends="init">
+        <mkdir dir="${build.dir}"/>
+    </target>
+    <target name="compile" depends="init,-pre-pre-compile">
+        <taskdef resource="scala/tools/ant/antlib.xml">
+            <classpath>
+                <pathelement location="${scala.home}/lib/scala-compiler.jar"/>
+                <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            </classpath>
+        </taskdef>
+        <scalac srcdir="src" destdir="${build.dir}">
+            <classpath>
+                <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            </classpath>
+        </scalac>
+    </target>
+    <target name="compile-single" depends="init,-pre-pre-compile">
+        <taskdef resource="scala/tools/ant/antlib.xml">
+            <classpath>
+                <pathelement location="${scala.home}/lib/scala-compiler.jar"/>
+                <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            </classpath>
+        </taskdef>
+        <scalac srcdir="src" destdir="${build.dir}">
+            <classpath>
+                <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            </classpath>
+            <patternset includes="${javac.includes}"/>
+        </scalac>
+    </target>
+    <!--
+    ===============
+    EXECUTION SECTION
+    ===============
+    -->
+    <target name="run-single" depends="init,compile-single">
+        <fail unless="run.class">Must select one file in the IDE or set run.class</fail>
+        <java fork="true" classname="${run.class}">
+            <classpath>
+                <path path="${build.dir}"/>
+                <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            </classpath>
+        </java>
+    </target>
+    <!--
+    ===============
+    CLEANUP SECTION
+    ===============
+    -->
+    <target name="clean" depends="init">
+        <delete dir="${build.dir}"/>
+    </target>
+</project>
