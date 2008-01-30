@@ -149,6 +149,13 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
         }
     }
     
+    def contains(key: String): Boolean = {
+        recurse(key) match {
+            case Some((attr, name)) => attr.contains(name)
+            case None => cells.contains(key)
+        }
+    }
+    
     def remove(key: String): Boolean = {
         recurse(key) match {
             case Some((attr, name)) => attr.remove(name)

@@ -14,6 +14,7 @@ class Config extends AttributeMap {
     def getStringList(key: String): Option[Array[String]] = root.getStringList(key)
     def set(key: String, value: String): Unit = root.set(key, value)
     def set(key: String, value: Array[String]): Unit = root.set(key, value)
+    def contains(key: String): Boolean = root.contains(key)
     def remove(key: String): Boolean = root.remove(key)
     def keys: Iterator[String] = root.keys
     def asMap: Map[String, String] = root.asMap

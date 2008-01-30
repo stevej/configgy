@@ -16,6 +16,7 @@ trait AttributeMap {
     def getStringList(key: String): Option[Array[String]]
     def set(key: String, value: String): Unit
     def set(key: String, value: Array[String]): Unit
+    def contains(key: String): Boolean
     def remove(key: String): Boolean
     def keys: Iterator[String]
     def asMap: Map[String, String]
@@ -86,5 +87,6 @@ trait AttributeMap {
     def apply(key: String, defaultValue: String) = get(key, defaultValue)
     def update(key: String, value: String) = set(key, value)
     def update(key: String, value: Int) = set(key, value)
+    def update(key: String, value: Boolean) = set(key, value)
     def update(key: String, value: Array[String]) = set(key, value)
 }
