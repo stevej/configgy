@@ -50,6 +50,20 @@ object AttributesTests extends Tests {
                "disposition=\"fighter\" name=\"Communist\" }") { s.toString }
     }
     
+    test("contains") {
+        val s = new Attributes(null, "")
+        s("name") = "Communist"
+        s("age") = 8
+        s("diet.food") = "Meow Mix"
+        s("diet.liquid") = "water"
+        expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { s.toString }
+        expect(true) { s.contains("age") }
+        expect(false) { s.contains("unknown") }
+        expect(true) { s.contains("diet.food") }
+        expect(false) { s.contains("diet.gas") }
+        expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { s.toString }
+    }
+    
     test("auto-vivify") {
         val s = new Attributes(null, "")
         s("a.b.c") = 8
