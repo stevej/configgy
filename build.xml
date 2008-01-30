@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="configgy" default="default" basedir=".">
     <description>Builds, tests, and runs the project configgy.</description>
-    <import file="nbproject/build-impl.xml"/>
     
+    <property name="build.dir" value="build" />
     <property name="test.dir" value="build-test" />
     <property name="docs.dir" value="docs" />
     
-    <!-- why doesn't scala.home get imported from build-impl? -->
     <property environment="env" />
     <property name="scala.home" value="${env.SCALA_HOME}" />
     <property name="scala-compiler.jar" value="${scala.home}/lib/scala-compiler.jar" />
@@ -19,6 +18,20 @@
         <classpath refid="scala.classpath" />
     </taskdef>
     
+    <target name="init">
+        <mkdir dir="${build.dir}" />
+        <mkdir dir="${test.dir}" />
+    </target>
+
+    <target name="compile" depends="init">
+        <scalac srcdir="src" destdir="${build.dir}" force="changed">
+            <classpath>
+                <path refid="scala.classpath" />
+            </classpath>
+            <include name="**/*.scala" />
+        </scalac>
+    </target>
+
     <!-- scalatests doesn't work with scala 2.6.2 yet, so gotta wait.. -->
     <target name="compile-tests" depends="compile">
         <scalac srcdir="test" destdir="${test.dir}" force="changed">
@@ -39,7 +52,11 @@
            </classpath>
            <arg line="net.lag.configgy.TestRunner" />
        </java>
-   </target>
-       
+    </target>
+
+    <target name="clean" depends="init">
+        <delete dir="${build.dir}"/>
+        <delete dir="${test.dir}"/>
+    </target>
 
 </project>
