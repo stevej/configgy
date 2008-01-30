@@ -11,39 +11,32 @@ import scala.util.parsing.syntax.Tokens
 
 class ConfigLexer extends Lexical with Tokens {
 
-    case class Number(value: String) extends Token {
-        def chars = value
-        override def toString = "Number(" + value + ")"
+    case class Number(chars: String) extends Token {
+        override def toString = "Number(" + chars + ")"
     }
     
-    case class Ident(name: String) extends Token {
-        def chars = name
-        override def toString = "Ident(" + name + ")"
+    case class Ident(chars: String) extends Token {
+        override def toString = "Ident(" + chars + ")"
     }
     
-    case class OpenTag(name: String) extends Token {
-        def chars = "<" + name + ">"
-        override def toString = "OpenTag(" + name +  ")"
+    case class OpenTag(chars: String) extends Token {
+        override def toString = "OpenTag(" + chars +  ")"
     }
     
-    case class CloseTag(name: String) extends Token {
-        def chars = "</" + name + ">"
-        override def toString = "CloseTag(" + name + ")"
+    case class CloseTag(chars: String) extends Token {
+        override def toString = "CloseTag(" + chars + ")"
     }
     
-    case class Assign(token: String) extends Token {
-        def chars = token
-        override def toString = "Assign(" + token + ")"
+    case class Assign(chars: String) extends Token {
+        override def toString = "Assign(" + chars + ")"
     }
     
-    case class QuotedString(value: String) extends Token {
-        def chars = value
-        override def toString = "QuotedString(\"" + StringUtils.quoteC(value) + "\")"
+    case class QuotedString(chars: String) extends Token {
+        override def toString = "QuotedString(\"" + StringUtils.quoteC(chars) + "\")"
     }
     
-    case class Delimiter(token: String) extends Token {
-        def chars = token
-        override def toString = "Delim(" + token + ")"
+    case class Delim(chars: String) extends Token {
+        override def toString = "Delim(" + chars + ")"
     }
     
     
@@ -85,7 +78,7 @@ class ConfigLexer extends Lexical with Tokens {
         (elem('\\') ~ elem('\n')) | (elem('\\') ~ elem('u') ~ repN(4, hexDigit)) |
         (elem('\\') ~ elem('x') ~ repN(2, hexDigit))) ~ '"' ^^ { x: Any => new QuotedString(StringUtils.unquoteC(pack(x))) }
     
-    def delim = (str("[") | str("]")) ^^ { case x => new Delimiter(x) }
+    def delim = (str("[") | str("]") | str(",")) ^^ { case x => new Delim(x) }
     
     def fini = EofCh ^^ EOF
     
