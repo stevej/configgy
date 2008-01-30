@@ -3,7 +3,6 @@ package net.lag.configgy
 import java.util.regex.Pattern
 
 import scala.util.parsing.combinator._
-import scala.util.parsing.combinator.syntactical.TokenParsers
 import scala.util.parsing.combinator.lexical.Lexical
 import scala.util.parsing.input.{CharArrayReader, Reader}
 import scala.util.parsing.input.CharArrayReader.EofCh
@@ -32,19 +31,19 @@ class ConfigLexer extends Lexical with Tokens {
         override def toString = "CloseTag(" + name + ")"
     }
     
-    case class Assign extends Token {
-        def chars = "="
-        override def toString = "Assign"
-    }
-    
-    case class CondAssign extends Token {
-        def chars = "?="
-        override def toString = "CondAssign"
+    case class Assign(token: String) extends Token {
+        def chars = token
+        override def toString = "Assign(" + token + ")"
     }
     
     case class QuotedString(value: String) extends Token {
         def chars = value
         override def toString = "QuotedString(\"" + StringUtils.quoteC(value) + "\")"
+    }
+    
+    case class Delimiter(token: String) extends Token {
+        def chars = token
+        override def toString = "Delim(" + token + ")"
     }
     
     
@@ -58,12 +57,15 @@ class ConfigLexer extends Lexical with Tokens {
         case None => ""
     }
     
+    // helper function for matching an entire string (not just a char)
+    def str(s: String): Parser[String] = accept(s.toList) ^^ { s }
 
+    
     val empties = Set[Char]() ++ " \t\n\r".toArray
     override def whitespace = rep((elem("whitespace", empties.contains(_)) +) |
         ('#' ~ rep(chrExcept('\n')) ~ '\n'))
     
-    override def token: Parser[Token] = number | ident | openTag | closeTag | assign | condAssign | quotedString | fini
+    override def token: Parser[Token] = number | ident | openTag | closeTag | assign | quotedString | delim | fini
     
     def any = elem("any", ch => true)
     val hexDigits = Set[Char]() ++ "0123456789abcdefABCDEF".toArray
@@ -77,12 +79,13 @@ class ConfigLexer extends Lexical with Tokens {
     def openTag = '<' ~ tagName ~ '>' ^^ { new OpenTag(_) }
     def closeTag = '<' ~ '/' ~ tagName ~ '>' ^^ { new CloseTag(_) }
     
-    def assign = elem('=') ^^ { case _ => new Assign }
-    def condAssign = elem('?') ~ elem('=') ^^ { case a ~ b => new CondAssign }
+    def assign = (str("=") | str("?=")) ^^ { case x => new Assign(x) }
     
     def quotedString = '"' ~ rep(chrExcept('\\', '"') | (elem('\\') ~ chrExcept('u', 'x')) |
         (elem('\\') ~ elem('\n')) | (elem('\\') ~ elem('u') ~ repN(4, hexDigit)) |
         (elem('\\') ~ elem('x') ~ repN(2, hexDigit))) ~ '"' ^^ { x: Any => new QuotedString(StringUtils.unquoteC(pack(x))) }
+    
+    def delim = (str("[") | str("]")) ^^ { case x => new Delimiter(x) }
     
     def fini = EofCh ^^ EOF
     
@@ -97,9 +100,4 @@ class ConfigLexer extends Lexical with Tokens {
             scanner.first :: scan(scanner.rest)
         }
     }
-}
-
-class ConfigParser extends TokenParsers {
-    type Tokens = ConfigLexer
-    val lexical = new Tokens
 }
