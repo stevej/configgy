@@ -8,7 +8,7 @@ import scala.util.parsing.combinator.syntactical.TokenParsers
 class ParseException(reason: String) extends Exception(reason)
 
 
-class ConfigParser(var attr: AttributeMap) extends TokenParsers {
+class ConfigParser(var attr: Attributes) extends TokenParsers {
     type Tokens = ConfigLexer
     val lexical = new Tokens
     
@@ -22,7 +22,7 @@ class ConfigParser(var attr: AttributeMap) extends TokenParsers {
     
     def value = number | string | stringList
     def number = accept("number", { case Number(x) => if (x.contains('.')) x else Integer.parseInt(x) })
-    def string = accept("string", { case QuotedString(x) => x })
+    def string = accept("string", { case QuotedString(x) => attr.interpolate(prefix, x) })
     def stringList = accept(Delim("[")) ~ repsep(string, Delim(",")) ~ accept(Delim("]")) ^^ { list => list.toArray }
     
     def assignment = assignName ~ accept("operation", { case Assign(x) => x }) ~ value ^^ {
@@ -67,8 +67,8 @@ class ConfigParser(var attr: AttributeMap) extends TokenParsers {
     def parse(in: String) = {
         phrase(root)(new lexical.Scanner(in)) match {
             case Success(result, _) => result
-            case Failure(msg, _) => throw new ParseException(msg)
-            case Error(msg, _) => throw new ParseException(msg)
+            case x @ Failure(msg, _) => throw new ParseException(x.toString)
+            case x @ Error(msg, _) => throw new ParseException(x.toString)
         }
     }
 }

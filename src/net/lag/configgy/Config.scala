@@ -6,6 +6,12 @@ import scala.collection.Map
 class Config extends AttributeMap {
     private val root = new Attributes(this, "")
     
+    protected[configgy] def load(in: String) = {
+        new ConfigParser(root).parse(in)
+    }
+    
+    override def toString = root.toString
+    
     
     // implement AttributeMap by wrapping our root object:
     

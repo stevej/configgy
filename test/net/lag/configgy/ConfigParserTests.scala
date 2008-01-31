@@ -8,8 +8,8 @@ object ConfigParserTests extends Tests {
     override def testName = "ConfigParserTests"
 
     def parse(in: String) = {
-        val attr = new Attributes(null, "")
-        new ConfigParser(attr).parse(in)
+        val attr = new Config
+        attr.load(in)
         attr
     }
 
@@ -34,6 +34,35 @@ object ConfigParserTests extends Tests {
     test("nested") {
         expect("{: alpha=\"hello\" beta={beta: gamma=\"23\" } }") {
             parse("alpha=\"hello\"\n<beta>\n    gamma=23\n</beta>").toString
+        }
+    }
+    
+    test("interpolate") {
+        expect("{: horse=\"ed\" word=\"schedule\" }") {
+            parse("horse=\"ed\" word=\"sch$(horse)ule\"").toString
+        }
+        expect("{: firstname=\"Bob\" fullname=\"Bob Columbo\" lastname=\"Columbo\" }") {
+            parse("lastname=\"Columbo\" firstname=\"Bob\" fullname=\"$(firstname) $(lastname)\"").toString
+        }
+    }
+    
+    test("do not interpolate") {
+        expect("{: horse=\"ed\" word=\"sch$(horse)ule\" }") {
+            parse("horse=\"ed\" word=\"sch\\$(horse)ule\"").toString
+        }
+    }
+    
+    test("nested interpolate") {
+        expect("{: alpha={alpha: beta={alpha.beta: greeting=\"frankly yours\" word=\"schedule\" } drink=\"frankly\" horse=\"frank\" } horse=\"ed\" }") {
+            parse("horse=\"ed\"\n" +
+                  "<alpha>\n" +
+                  "    horse=\"frank\"\n" +
+                  "    drink=\"$(horse)ly\"\n" +
+                  "    <beta>\n" +
+                  "        word=\"sch$(horse)ule\"\n" +
+                  "        greeting=\"$(alpha.drink) yours\"\n" +
+                  "    </beta>\n" +
+                  "</alpha>").toString
         }
     }
 }

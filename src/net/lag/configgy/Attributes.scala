@@ -1,5 +1,6 @@
 package net.lag.configgy
 
+import java.util.regex.Pattern
 import scala.collection.{mutable, Map}
 
 
@@ -182,5 +183,35 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
             }
         }
         ret
+    }
+    
+    // substitute "$(...)" strings with looked-up vars
+    // (and find "\$" and replace them with "$")
+    private val INTERPOLATE_RE = Pattern.compile("(?<!\\\\)\\$\\((\\w[\\w\\d\\._-]*)\\)|\\\\\\$")
+    protected[configgy] def interpolate(s: String): String = {
+        StringUtils.patternSub(INTERPOLATE_RE, s, m => {
+            val name = m.group(1)
+            if (m.group(0) == "\\$") {
+                "$"
+            } else get(name) match {
+                case Some(x) => x
+                case None => {
+                    if (root != null) {
+                        root.get(name) match {
+                            case Some(x) => x
+                            case None => ""
+                        }
+                    } else {
+                        ""
+                    }
+                }
+            }
+        })
+    }
+    protected[configgy] def interpolate(key: String, s: String): String = {
+        recurse(key) match {
+            case Some((attr, name)) => attr.interpolate(s)
+            case None => interpolate(s)
+        }
     }
 }

@@ -36,7 +36,7 @@ object StringUtils {
     private val QUOTE_RE = Pattern.compile("[\u0000-\u001f\u007f-\uffff\\\\\"]")
 
     def quoteC(s: String) = {
-        patternSub(QUOTE_RE, s, (m: Matcher) => {
+        patternSub(QUOTE_RE, s, m => {
             m.group.charAt(0) match {
                 case '\r' => "\\r"
                 case '\n' => "\\n"
@@ -55,10 +55,11 @@ object StringUtils {
     }
 
 
-    private val UNQUOTE_RE = Pattern.compile("\\\\(u[\\dA-Fa-f]{4}|x[\\dA-Fa-f]{2}|[^ux])")
+    // we intentionally don't unquote "\$" here, so it can be used to escape interpolation later.
+    private val UNQUOTE_RE = Pattern.compile("\\\\(u[\\dA-Fa-f]{4}|x[\\dA-Fa-f]{2}|[rnt\"\\\\])")
 
     def unquoteC(s: String) = {
-        patternSub(UNQUOTE_RE, s, (m: Matcher) => {
+        patternSub(UNQUOTE_RE, s, m => {
             val ch = m.group(1).charAt(0) match {
                 // holy crap! this is terrible:
                 case 'u' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
@@ -71,6 +72,4 @@ object StringUtils {
             ch.toString
         })
     }
-    
-    // FIXME: what?
 }

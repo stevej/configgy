@@ -18,6 +18,6 @@ object StringUtilsTests extends Tests {
         expect("name\tvalue\t\u20acb\u00fcllet?\u20ac") { StringUtils.unquoteC("name\\tvalue\\t\\u20acb\\xfcllet?\\u20ac") }
         expect("she said \"hello\"") { StringUtils.unquoteC("she said \\\"hello\\\"") }
         expect("\\backslash") { StringUtils.unquoteC("\\\\backslash") }
+        expect("real\\$dollar") { StringUtils.unquoteC("real\\$dollar") }
     }
-    
 }

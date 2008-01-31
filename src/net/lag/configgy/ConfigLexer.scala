@@ -68,7 +68,7 @@ class ConfigLexer extends Lexical with Tokens {
     def segment = (letter | elem('_')) ~ rep(letter | digit | elem('-') | elem('_')) ^^ { pack(_) }
     def ident = segment ~ rep(elem('.') ~ segment) ^^ { x: Any => new Ident(pack(x)) }
 
-    def tagName = letter ~ rep(letter | digit | elem('-') | elem('.') | elem('_')) ^^ { pack(_) }
+    def tagName = letter ~ rep(letter | digit | elem('-') | elem('_')) ^^ { pack(_) }
     def openTag = '<' ~ tagName ~ '>' ^^ { new OpenTag(_) }
     def closeTag = '<' ~ '/' ~ tagName ~ '>' ^^ { new CloseTag(_) }
     
