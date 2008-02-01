@@ -189,22 +189,24 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
     // (and find "\$" and replace them with "$")
     private val INTERPOLATE_RE = Pattern.compile("(?<!\\\\)\\$\\((\\w[\\w\\d\\._-]*)\\)|\\\\\\$")
     protected[configgy] def interpolate(s: String): String = {
+        def lookup(key: String, path: List[AttributeMap]): String = {
+            path match {
+                case Nil => ""
+                case attr :: xs => attr.get(key) match {
+                    case Some(x) => x
+                    case None => lookup(key, xs)
+                }
+            }
+        }
+        
         StringUtils.patternSub(INTERPOLATE_RE, s, m => {
             val name = m.group(1)
             if (m.group(0) == "\\$") {
                 "$"
-            } else get(name) match {
-                case Some(x) => x
-                case None => {
-                    if (root != null) {
-                        root.get(name) match {
-                            case Some(x) => x
-                            case None => ""
-                        }
-                    } else {
-                        ""
-                    }
-                }
+            } else if (root == null) {
+                lookup(m.group(1), List(this, EnvironmentAttributes))
+            } else {
+                lookup(m.group(1), List(this, root, EnvironmentAttributes))
             }
         })
     }

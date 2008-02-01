@@ -65,4 +65,13 @@ object ConfigParserTests extends Tests {
                   "</alpha>").toString
         }
     }
+    
+    
+    test("env") {
+        // not really a test, since we can't guarantee anything from the env
+        expect(false) {
+            parse("user=\"$(USER)\"").toString == "{: user=\"$(USER)\" }"
+        }
+    }
+
 }
