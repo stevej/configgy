@@ -29,6 +29,7 @@ object EnvironmentAttributes extends AttributeMap {
     def remove(key: String): Boolean = error("read-only attributes")
     def keys: Iterator[String] = env.keys
     def asMap: Map[String, String] = error("not implemented")
+    def subscribe(subscriber: Subscriber): SubscriptionKey = error("not implemented")
     
     
     try {

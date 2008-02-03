@@ -20,6 +20,7 @@ trait AttributeMap {
     def remove(key: String): Boolean
     def keys: Iterator[String]
     def asMap: Map[String, String]
+    def subscribe(subscriber: Subscriber): SubscriptionKey
 
     
     // -----  convenience methods
@@ -80,6 +81,20 @@ trait AttributeMap {
         val keys = this.keys.toList.toArray
         Sorting.quickSort(keys)
         keys
+    }
+    
+    /**
+     * Subscribe to changes on this AttributeMap, but don't bother with
+     * validating. Whenever this AttributeMap changes, a new copy will be
+     * passed to the given function.
+     */
+    def subscribe(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
+        subscribe(new Subscriber {
+            def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
+            def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
+                f(replacement)
+            }
+        })
     }
                     
     

@@ -7,3 +7,9 @@ TO-DO
 - include files
 
 - subscriptions
+
+notifications: for a key "a.b.c", traverse the subscription tree for a, b, c.
+notify each node. once we get to c, notify every node that's on c or a child
+of c.
+
+- subscribers should take Option[]s

@@ -114,4 +114,21 @@ object AttributesTests extends Tests {
             (for (val k <- keyList) yield (k + "=" + map(k))).mkString("{ ", ", ", " }")
         }
     }
+    
+    test("copy") {
+        val s = new Attributes(null, "")
+        s("name") = "Communist"
+        s("age") = 8
+        s("diet.food") = "Meow Mix"
+        s("diet.liquid") = "water"
+        val t = s.copy
+        
+        expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { s.toString }
+        expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { t.toString }
+        
+        s("diet.food") = "fish"
+
+        expect("{: age=\"8\" diet={diet: food=\"fish\" liquid=\"water\" } name=\"Communist\" }") { s.toString }
+        expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { t.toString }
+    }
 }

@@ -12,7 +12,8 @@ object TestRunner {
         val suite = new TestSuite(StringUtilsTests,
                                   ConfigLexerTests,
                                   AttributesTests,
-                                  ConfigParserTests)
+                                  ConfigParserTests,
+                                  ConfigTests)
                                       
         val testCount = sum(for (t <- suite.buf) yield t.asInstanceOf[sorg.testing.Tests].tests.length)
         Console.println("Running " + testCount + " unit tests:")

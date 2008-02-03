@@ -6,15 +6,16 @@ import scala.collection.{mutable, Map}
 
 class AttributesException(reason: String) extends Exception(reason)
 
-protected[configgy] class Cell
+protected[configgy] abstract class Cell
 protected[configgy] case class StringCell(value: String) extends Cell
 protected[configgy] case class AttributesCell(attr: Attributes) extends Cell
 protected[configgy] case class StringListCell(array: Array[String]) extends Cell
 
 
-class Attributes protected[configgy](val root: Config, val name: String) extends AttributeMap {
+class Attributes protected[configgy](val config: Config, val name: String) extends AttributeMap {
 
     private val cells = new mutable.HashMap[String, Cell]
+    private var monitored = false
     
     
     def keys: Iterator[String] = cells.keys
@@ -102,7 +103,10 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
     }
     
     private def createNested(key: String): Attributes = {
-        val attr = new Attributes(root, if (name.equals("")) key else (name + "." + key))
+        val attr = new Attributes(config, if (name.equals("")) key else (name + "." + key))
+        if (monitored) {
+            attr.setMonitored
+        }
         cells += key -> new AttributesCell(attr)
         attr
     }
@@ -131,6 +135,11 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
     }
     
     def set(key: String, value: String): Unit = {
+        if (monitored) {
+            config.deepSet(name, key, value)
+            return
+        }
+        
         recurse(key) match {
             case Some((attr, name)) => attr.set(name, value)
             case None => cells.get(key) match {
@@ -141,6 +150,11 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
     }
     
     def set(key: String, value: Array[String]): Unit = {
+        if (monitored) {
+            config.deepSet(name, key, value)
+            return
+        }
+
         recurse(key) match {
             case Some((attr, name)) => attr.set(name, value)
             case None => cells.get(key) match {
@@ -158,6 +172,10 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
     }
     
     def remove(key: String): Boolean = {
+        if (monitored) {
+            return config.deepRemove(name, key)
+        }
+        
         recurse(key) match {
             case Some((attr, name)) => attr.remove(name)
             case None => {
@@ -185,9 +203,14 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
         ret
     }
     
+    def subscribe(subscriber: Subscriber) = {
+        config.subscribe(name, subscriber)
+    }
+    
     // substitute "$(...)" strings with looked-up vars
     // (and find "\$" and replace them with "$")
     private val INTERPOLATE_RE = Pattern.compile("(?<!\\\\)\\$\\((\\w[\\w\\d\\._-]*)\\)|\\\\\\$")
+    
     protected[configgy] def interpolate(s: String): String = {
         def lookup(key: String, path: List[AttributeMap]): String = {
             path match {
@@ -203,17 +226,52 @@ class Attributes protected[configgy](val root: Config, val name: String) extends
             val name = m.group(1)
             if (m.group(0) == "\\$") {
                 "$"
-            } else if (root == null) {
+            } else if (config == null) {
                 lookup(m.group(1), List(this, EnvironmentAttributes))
             } else {
-                lookup(m.group(1), List(this, root, EnvironmentAttributes))
+                lookup(m.group(1), List(this, config, EnvironmentAttributes))
             }
         })
     }
+    
     protected[configgy] def interpolate(key: String, s: String): String = {
         recurse(key) match {
             case Some((attr, name)) => attr.interpolate(s)
             case None => interpolate(s)
         }
+    }
+    
+    /* set this node as part of a monitored config tree. once this is set,
+     * all modification requests go through the root Config, so validation
+     * will happen.
+     */
+    protected[configgy] def setMonitored: Unit = {
+        if (monitored) {
+            return
+        }
+        
+        monitored = true
+        for (val cell <- cells.values) {
+            cell match {
+                case AttributesCell(x) => x.setMonitored
+                case _ => // pass
+            }
+        }
+    }
+    
+    // make a deep copy of the Attributes tree.
+    def copy: Attributes = {
+        val out = new Attributes(config, name)
+        for (val (key, value) <- cells.elements) {
+            value match {
+                case StringCell(x) => out(key) = x
+                case StringListCell(x) => out(key) = x
+                case AttributesCell(x) => {
+                    val attr = x.copy
+                    out.cells += key -> new AttributesCell(attr)
+                }
+            }
+        }
+        out
     }
 }
