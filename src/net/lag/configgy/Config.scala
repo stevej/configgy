@@ -101,7 +101,7 @@ class Config extends AttributeMap {
     
     // -----  subscriptions
     
-    def subscribe(key: String, subscriber: Subscriber): SubscriptionKey = synchronized {
+    protected[configgy] def subscribe(key: String, subscriber: Subscriber): SubscriptionKey = synchronized {
         root.setMonitored
         var subkey = nextKey
         nextKey += 1
@@ -116,7 +116,7 @@ class Config extends AttributeMap {
         new SubscriptionKey(this, subkey)
     }
     
-    def subscribe(key: String)(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
+    protected[configgy] def subscribe(key: String)(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
         subscribe(key, new Subscriber {
             def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
             def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
