@@ -9,7 +9,13 @@ import scala.util.parsing.input.CharArrayReader.EofCh
 import scala.util.parsing.syntax.Tokens
 
 
-class ConfigLexer extends Lexical with Tokens {
+/**
+ * Tokenize chars (from a string) for use in parsing a config file. In scala,
+ * a "Parser" converts things from type A to type B, so in that sense, a
+ * lexer is a "Parser" that converts chars to tokens. This is an
+ * implementation detail of ConfigParser.
+ */
+private[configgy] class ConfigLexer extends Lexical with Tokens {
 
     case class Number(chars: String) extends Token {
         override def toString = "Number(" + chars + ")"
@@ -39,6 +45,10 @@ class ConfigLexer extends Lexical with Tokens {
         override def toString = "Delim(" + chars + ")"
     }
     
+    case class Keyword(chars: String) extends Token {
+        override def toString = "Keyword(" + chars + ")"
+    }
+    
     
     // helper function for turning match combos into strings
     def pack(x: Any): String = x match {
@@ -66,7 +76,12 @@ class ConfigLexer extends Lexical with Tokens {
     
     def number = opt(elem('-')) ~ rep1(digit) ~ opt(elem('.') ~ rep(digit)) ^^ { x: Any => new Number(pack(x)) }
     def segment = (letter | elem('_')) ~ rep(letter | digit | elem('-') | elem('_')) ^^ { pack(_) }
-    def ident = segment ~ rep(elem('.') ~ segment) ^^ { x: Any => new Ident(pack(x)) }
+    def ident = segment ~ rep(elem('.') ~ segment) ^^ {
+        x: Any => pack(x) match {
+            case kw @ "include" => new Keyword(kw)
+            case ident => new Ident(ident)
+        }
+    }
 
     def tagName = letter ~ rep(letter | digit | elem('-') | elem('_')) ^^ { pack(_) }
     def openTag = '<' ~ tagName ~ '>' ^^ { new OpenTag(_) }

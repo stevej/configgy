@@ -6,11 +6,14 @@ import scala.collection.jcl
 import scala.collection.mutable
 
 // grr, scala can wrap any specific java Map type, but not the generic Map. why not?
-class JavaMap[K, E](override val underlying: java.util.Map[K, E]) extends jcl.MapWrapper[K, E]
+private class JavaMap[K, E](override val underlying: java.util.Map[K, E]) extends jcl.MapWrapper[K, E]
 
 
-// an AttributeMap that wraps the system environment
-object EnvironmentAttributes extends AttributeMap {
+/**
+ * An AttributeMap that wraps the system environment. This is used as a
+ * fallback when looking up "$(...)" substitutions in config files.
+ */
+private[configgy] object EnvironmentAttributes extends AttributeMap {
     private val env = new mutable.HashMap[String, String]
     env ++= new JavaMap(System.getenv()).elements
     

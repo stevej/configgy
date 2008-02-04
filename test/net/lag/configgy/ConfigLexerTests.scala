@@ -23,8 +23,8 @@ object ConfigLexerTests extends Tests {
     }
     
     test("lexer2") {
-        expect("Ident(alpha);Assign(=);Number(-4);Delim([);Ident(and);Assign(?=);QuotedString(\"ok\");Assign(=);EOF") {
-            (new ConfigLexer).scan("alpha = -4 [and ?= \"ok\" =").mkString(";")
+        expect("Ident(alpha);Assign(=);Number(-4);Delim([);Ident(and);Assign(?=);QuotedString(\"ok\");Assign(=);Keyword(include);EOF") {
+            (new ConfigLexer).scan("alpha = -4 [and ?= \"ok\" = include").mkString(";")
         }
     }
 

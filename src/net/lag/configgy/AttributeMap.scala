@@ -4,6 +4,12 @@ import scala.collection.Map
 import scala.util.Sorting
 
 
+/**
+ * Abstract trait for an object that maps string keys to values of type
+ * string, string array, or (nested) AttributeMap. Integers and booleans may
+ * also be stored and retrieved, but they are converted to/from strings in
+ * the process.
+ */
 trait AttributeMap {
     private val TRUE = "true"
     private val FALSE = "false"

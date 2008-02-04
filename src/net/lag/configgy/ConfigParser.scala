@@ -5,20 +5,25 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.syntactical.TokenParsers
 
 
+/**
+ * An exception thrown when parsing a config file, if there was an error
+ * during parsing. The <code>reason</code> string will contain the parsing
+ * error details.
+ */
 class ParseException(reason: String) extends Exception(reason)
 
 
-class ConfigParser(var attr: Attributes) extends TokenParsers {
+private[configgy] class ConfigParser(var attr: Attributes, val importer: Importer) extends TokenParsers {
     type Tokens = ConfigLexer
     val lexical = new Tokens
     
-    import lexical.{Assign, CloseTag, Delim, Ident, Number, OpenTag, QuotedString}
+    import lexical.{Assign, CloseTag, Delim, Ident, Keyword, Number, OpenTag, QuotedString}
     
     val sections = new Stack[String]
     var prefix = ""
     
     
-    def root = rep(assignment | toggle | sectionOpen | sectionClose)
+    def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose)
     
     def value = number | string | stringList
     def number = accept("number", { case Number(x) => if (x.contains('.')) x else Integer.parseInt(x) })
@@ -64,7 +69,13 @@ class ConfigParser(var attr: Attributes) extends TokenParsers {
         }
     }
     
-    def parse(in: String) = {
+    def includeFile = accept(Keyword("include")) ~ string ^^ {
+        case filename: String => {
+            new ConfigParser(attr.makeAttributes(sections.mkString(".")), importer) parse importer.importFile(filename)
+        }
+    }
+    
+    def parse(in: String): Unit = {
         phrase(root)(new lexical.Scanner(in)) match {
             case Success(result, _) => result
             case x @ Failure(msg, _) => throw new ParseException(x.toString)

@@ -89,19 +89,24 @@ class Config extends AttributeMap {
     private val subscribers = new SubscriptionNode
     private val subscriberKeys = new mutable.HashMap[Int, (SubscriptionNode, Subscriber)]
     private var nextKey = 1
+    var importer: Importer = new FilesystemImporter
 
     def load(data: String) = {
-        new ConfigParser(root).parse(data)
+        new ConfigParser(root, importer).parse(data)
         root.setMonitored
     }
-
+    
+    def loadFile(filename: String) = {
+        load(importer.importFile(filename))
+    }
+    
     
     override def toString = root.toString
     
     
     // -----  subscriptions
     
-    protected[configgy] def subscribe(key: String, subscriber: Subscriber): SubscriptionKey = synchronized {
+    private[configgy] def subscribe(key: String, subscriber: Subscriber): SubscriptionKey = synchronized {
         root.setMonitored
         var subkey = nextKey
         nextKey += 1
@@ -116,7 +121,7 @@ class Config extends AttributeMap {
         new SubscriptionKey(this, subkey)
     }
     
-    protected[configgy] def subscribe(key: String)(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
+    private[configgy] def subscribe(key: String)(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
         subscribe(key, new Subscriber {
             def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
             def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
@@ -129,7 +134,7 @@ class Config extends AttributeMap {
     
     override def subscribe(f: (Option[AttributeMap]) => Unit) = subscribe(null.asInstanceOf[String])(f)
     
-    def unsubscribe(subkey: SubscriptionKey) = synchronized {
+    private[configgy] def unsubscribe(subkey: SubscriptionKey) = synchronized {
         subscriberKeys.get(subkey.id) match {
             case None => false
             case Some((node, sub)) => {
@@ -166,15 +171,15 @@ class Config extends AttributeMap {
         true
     }
     
-    protected[configgy] def deepSet(name: String, key: String, value: String) = {
+    private[configgy] def deepSet(name: String, key: String, value: String) = {
         deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
     }
     
-    protected[configgy] def deepSet(name: String, key: String, value: Array[String]) = {
+    private[configgy] def deepSet(name: String, key: String, value: Array[String]) = {
         deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
     }
     
-    protected[configgy] def deepRemove(name: String, key: String): Boolean = {
+    private[configgy] def deepRemove(name: String, key: String): Boolean = {
         deepChange(name, key, { (newRoot, fullKey) => newRoot.remove(fullKey) })
     }
     

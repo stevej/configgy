@@ -6,12 +6,55 @@ import util.parsing.input.CharArrayReader
         
 object ConfigParserTests extends Tests {
     override def testName = "ConfigParserTests"
+        
+    private val TEST_DATA1 =
+        "toplevel=\"skeletor\"\n" +
+        "<inner>\n" +
+        "    include \"test1\"\n" +
+        "    home = \"greyskull\"\n" +
+        "</inner>\n"
+    
+    private val IMPORT_DATA1 =
+        "staff = \"weird skull\"\n"
+    
+    private val TEST_DATA2 =
+        "toplevel=\"hat\"\n" +
+        "include \"test2\"\n" +
+        "include \"test4\"\n"
 
+    private val IMPORT_DATA2 =
+        "<inner>\n" +
+        "    cat=\"meow\"\n" +
+        "    include \"test3\"\n" +
+        "    dog ?= \"blah\"\n" +
+        "</inner>"
+   
+    private val IMPORT_DATA3 =
+        "dog=\"bark\"\n" +
+        "cat ?= \"blah\"\n"
+    
+    private val IMPORT_DATA4 =
+        "cow=\"moo\"\n"
+
+
+    class FakeImporter extends Importer {
+        def importFile(filename: String): String = {
+            filename match {
+                case "test1" => IMPORT_DATA1
+                case "test2" => IMPORT_DATA2
+                case "test3" => IMPORT_DATA3
+                case "test4" => IMPORT_DATA4
+            }
+        }
+    }
+    
     def parse(in: String) = {
         val attr = new Config
+        attr.importer = new FakeImporter
         attr.load(in)
         attr
     }
+    
 
     test("value") {
         expect("{: weight=\"48\" }") {
@@ -66,7 +109,6 @@ object ConfigParserTests extends Tests {
         }
     }
     
-    
     test("env") {
         // not really a test, since we can't guarantee anything from the env
         expect(false) {
@@ -74,4 +116,13 @@ object ConfigParserTests extends Tests {
         }
     }
 
+    test("import") {
+        expect("{: inner={inner: home=\"greyskull\" staff=\"weird skull\" } toplevel=\"skeletor\" }") {
+            parse(TEST_DATA1).toString
+        }
+
+        expect("{: cow=\"moo\" inner={inner: cat=\"meow\" dog=\"bark\" } toplevel=\"hat\" }") {
+            parse(TEST_DATA2).toString
+        }
+    }
 }

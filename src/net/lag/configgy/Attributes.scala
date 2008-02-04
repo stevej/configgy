@@ -6,13 +6,13 @@ import scala.collection.{mutable, Map}
 
 class AttributesException(reason: String) extends Exception(reason)
 
-protected[configgy] abstract class Cell
-protected[configgy] case class StringCell(value: String) extends Cell
-protected[configgy] case class AttributesCell(attr: Attributes) extends Cell
-protected[configgy] case class StringListCell(array: Array[String]) extends Cell
+private[configgy] abstract class Cell
+private[configgy] case class StringCell(value: String) extends Cell
+private[configgy] case class AttributesCell(attr: Attributes) extends Cell
+private[configgy] case class StringListCell(array: Array[String]) extends Cell
 
 
-class Attributes protected[configgy](val config: Config, val name: String) extends AttributeMap {
+private[configgy] class Attributes(val config: Config, val name: String) extends AttributeMap {
 
     private val cells = new mutable.HashMap[String, Cell]
     private var monitored = false
@@ -55,7 +55,7 @@ class Attributes protected[configgy](val config: Config, val name: String) exten
      * Attributes or it doesn't exist, return None. For a non-compound key,
      * return the cell if it exists, or None if it doesn't.
      */
-    protected[configgy] def lookupCell(key: String): Option[Cell] = {
+    private def lookupCell(key: String): Option[Cell] = {
         val elems = key.split("\\.", 2)
         if (elems.length > 1) {
             cells.get(elems(0)) match {
@@ -85,7 +85,7 @@ class Attributes protected[configgy](val config: Config, val name: String) exten
      * object, then an AttributesException will be thrown.
      */
     @throws(classOf[AttributesException])
-    protected[configgy] def recurse(key: String): Option[(Attributes, String)] = {
+    private def recurse(key: String): Option[(Attributes, String)] = {
         val elems = key.split("\\.", 2)
         if (elems.length > 1) {
             val attr = (cells.get(elems(0)) match {
@@ -123,6 +123,17 @@ class Attributes protected[configgy](val config: Config, val name: String) exten
         lookupCell(key) match {
             case Some(AttributesCell(x)) => Some(x)
             case _ => None
+        }
+    }
+    
+    private[configgy] def makeAttributes(key: String): Attributes = {
+        if (key == "") {
+            return this
+        }
+        lookupCell(key) match {
+            case Some(AttributesCell(x)) => x
+            case Some(_) => error("should not happen")
+            case None => createNested(key)
         }
     }
     

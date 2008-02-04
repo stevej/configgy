@@ -53,6 +53,13 @@
            <arg line="net.lag.configgy.TestRunner" />
        </java>
     </target>
+    
+    <target name="docs">
+        <mkdir dir="${docs.dir}" />
+        <scaladoc srcdir="src" destdir="${docs.dir}">
+            <classpath refid="scala.classpath" />
+        </scaladoc>
+    </target>
 
     <target name="clean" depends="init">
         <delete dir="${build.dir}"/>
