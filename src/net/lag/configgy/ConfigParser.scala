@@ -28,7 +28,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
     def value = number | string | stringList
     def number = accept("number", { case Number(x) => if (x.contains('.')) x else Integer.parseInt(x) })
     def string = accept("string", { case QuotedString(x) => attr.interpolate(prefix, x) })
-    def stringList = accept(Delim("[")) ~ repsep(string, Delim(",")) ~ accept(Delim("]")) ^^ { list => list.toArray }
+    def stringList = accept(Delim("[")) ~> repsep(string, Delim(",")) <~ accept(Delim("]")) ^^ { list => list.toArray }
     
     def assignment = assignName ~ accept("operation", { case Assign(x) => x }) ~ value ^^ {
         case k ~ a ~ v => if (a match {
@@ -57,11 +57,11 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
     def sectionClose = accept("close tag", { case CloseTag(x) => x }) ^^ {
         case x: String => {
             if (sections.isEmpty) {
-                fail("dangling close tag: " + x)
+                failure("dangling close tag: " + x)
             } else {
                 val last = sections.pop
                 if (last != x) {
-                    fail("got closing tag for " + x + ", expected " + last)
+                    failure("got closing tag for " + x + ", expected " + last)
                 } else {
                     prefix = sections.mkString(".")
                 }
@@ -69,7 +69,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
         }
     }
     
-    def includeFile = accept(Keyword("include")) ~ string ^^ {
+    def includeFile = accept(Keyword("include")) ~> string ^^ {
         case filename: String => {
             new ConfigParser(attr.makeAttributes(sections.mkString(".")), importer) parse importer.importFile(filename)
         }

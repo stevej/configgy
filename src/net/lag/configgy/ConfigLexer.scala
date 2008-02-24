@@ -61,12 +61,11 @@ private[configgy] class ConfigLexer extends Lexical with Tokens {
     }
     
     // helper function for matching an entire string (not just a char)
-    def str(s: String): Parser[String] = accept(s.toList) ^^ { s }
+    def str(s: String): Parser[String] = accept(s.toList) ^^ { (list) => s }
 
     
     val empties = Set[Char]() ++ " \t\n\r".toArray
-    override def whitespace = rep((elem("whitespace", empties.contains(_)) +) |
-        ('#' ~ rep(chrExcept('\n')) ~ '\n'))
+    override def whitespace = rep((elem("whitespace", empties.contains(_)) +) | ('#' ~ rep(chrExcept('\n')) ~ '\n'))
     
     override def token: Parser[Token] = number | ident | openTag | closeTag | assign | quotedString | delim | fini
     
@@ -84,18 +83,18 @@ private[configgy] class ConfigLexer extends Lexical with Tokens {
     }
 
     def tagName = letter ~ rep(letter | digit | elem('-') | elem('_')) ^^ { pack(_) }
-    def openTag = '<' ~ tagName ~ '>' ^^ { new OpenTag(_) }
-    def closeTag = '<' ~ '/' ~ tagName ~ '>' ^^ { new CloseTag(_) }
+    def openTag = '<' ~> tagName <~ '>' ^^ { new OpenTag(_) }
+    def closeTag = '<' ~> '/' ~> tagName <~ '>' ^^ { new CloseTag(_) }
     
     def assign = (str("=") | str("?=")) ^^ { case x => new Assign(x) }
     
-    def quotedString = '"' ~ rep(chrExcept('\\', '"') | (elem('\\') ~ chrExcept('u', 'x')) |
+    def quotedString = '"' ~> rep(chrExcept('\\', '"') | (elem('\\') ~ chrExcept('u', 'x')) |
         (elem('\\') ~ elem('\n')) | (elem('\\') ~ elem('u') ~ repN(4, hexDigit)) |
-        (elem('\\') ~ elem('x') ~ repN(2, hexDigit))) ~ '"' ^^ { x: Any => new QuotedString(StringUtils.unquoteC(pack(x))) }
+        (elem('\\') ~ elem('x') ~ repN(2, hexDigit))) <~ '"' ^^ { x: Any => new QuotedString(StringUtils.unquoteC(pack(x))) }
     
     def delim = (str("[") | str("]") | str(",")) ^^ { case x => new Delim(x) }
     
-    def fini = EofCh ^^ EOF
+    def fini = EofCh ^^ { case _ => EOF }
     
     // for unit tests: scan a string and return a list of Tokens
     def scan(s: String): List[Token] = {
