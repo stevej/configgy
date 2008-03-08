@@ -74,6 +74,12 @@ object ConfigParserTests extends Tests {
         "{: daemon={daemon: base={daemon.base: ulimit_fd=\"32768\" } useless=\"3\" } " +
         "upp={upp (inherit=daemon.base): alpha={upp.alpha (inherit=upp): name=\"alpha\" } " +
         "beta={upp.beta (inherit=daemon): name=\"beta\" } uid=\"16\" } }"
+    
+    private val TEST_DATA6 =
+        "<home>\n" +
+        "    states = [\"California\", \"Tennessee\", \"Idaho\"]\n" +
+        "    regions = [\"pacific\", \"southeast\", \"northwest\"]\n" +
+        "</home>\n"
 
 
     class FakeImporter extends Importer {
@@ -202,5 +208,19 @@ object ConfigParserTests extends Tests {
         expect("3") { a.get("upp.beta.useless", "") }
         expect("") { a.get("upp.alpha.useless", "") }
         expect("") { a.get("upp.beta.ulimit_fd", "") }
+    }
+    
+    test("string list") {
+        val a = parse(TEST_DATA6)
+        expect("{: home={home: regions=[pacific,southeast,northwest] states=[California,Tennessee,Idaho] } }") { a.toString }
+        expect("California,Tennessee,Idaho") { a.getStringList("home.states").get.toList.mkString(",") }
+        expect("California") {
+            val states = a.getStringList("home.states").get
+            states(0)
+        }
+        expect("southeast") {
+            val regions = a.getStringList("home.regions").get
+            regions(1)
+        }
     }
 }
