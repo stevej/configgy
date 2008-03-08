@@ -16,6 +16,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
 
     private val cells = new mutable.HashMap[String, Cell]
     private var monitored = false
+    private var inherit: Attributes = null
     
     
     def keys: Iterator[String] = cells.keys
@@ -23,6 +24,11 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     override def toString() = {
         val buffer = new StringBuilder("{")
         buffer ++= name
+        if (inherit != null) {
+            buffer ++= " (inherit="
+            buffer ++= inherit.name
+            buffer ++= ")"
+        }
         buffer ++= ": "
         for (val key <- sortedKeys) {
             buffer ++= key
@@ -59,12 +65,19 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         val elems = key.split("\\.", 2)
         if (elems.length > 1) {
             cells.get(elems(0)) match {
-                // FIXME: i think this cast is exposing a compiler bug?
-                case Some(AttributesCell(x)) => x.lookupCell(elems(1)).asInstanceOf[Option[Cell]]
+                case Some(AttributesCell(x)) => x.lookupCell(elems(1))
+                case None => {
+                    if (inherit != null) inherit.lookupCell(key) else None
+                }
                 case _ => None
             }
         } else {
-            cells.get(elems(0))
+            cells.get(elems(0)) match {
+                case x @ Some(_) => x
+                case None => {
+                    if (inherit != null) inherit.lookupCell(key) else None
+                }
+            }
         }
     }
     
@@ -130,10 +143,13 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         if (key == "") {
             return this
         }
-        lookupCell(key) match {
-            case Some(AttributesCell(x)) => x
-            case Some(_) => error("should not happen")
-            case None => createNested(key)
+        recurse(key) match {
+            case Some((attr, name)) => attr.makeAttributes(name)
+            case None => lookupCell(key) match {
+                case Some(AttributesCell(x)) => x
+                case Some(_) => throw new AttributesException("Illegal key " + key)
+                case None => createNested(key)
+            }
         }
     }
     
@@ -268,6 +284,10 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
                 case _ => // pass
             }
         }
+    }
+    
+    protected[configgy] def setInherit(attr: Attributes) = {
+        inherit = attr
     }
     
     // make a deep copy of the Attributes tree.

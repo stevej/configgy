@@ -9,8 +9,12 @@ object ConfigLexerTests extends Tests {
     override def testName = "ConfigLexerTests"
 
     test("lexer1") {
-        expect("OpenTag(hello);EOF") {
+        expect("OpenTag(hello,List());EOF") {
             (new ConfigLexer).scan("<hello>").mkString(";")
+        }
+        
+        expect("OpenTag(hello,List(TagAttribute(inherit,root)));EOF") {
+            (new ConfigLexer).scan("<hello inherit=\"root\">").mkString(";")
         }
         
         expect("Number(98.5);EOF") {

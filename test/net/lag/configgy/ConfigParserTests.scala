@@ -35,6 +35,22 @@ object ConfigParserTests extends Tests {
     
     private val IMPORT_DATA4 =
         "cow=\"moo\"\n"
+    
+    private val TEST_DATA3 =
+        "cat = 23\n" +
+        "<cat>\n" +
+        "    dog = 1\n" +
+        "</cat>\n"
+    
+    private val TEST_DATA4 =
+        "<daemon>\n" +
+        "    ulimit_fd = 32768\n" +
+        "    uid = 16\n" +
+        "</daemon>\n" +
+        "\n" +
+        "<upp inherit=\"daemon\">\n" +
+        "    uid = 23\n" +
+        "</upp>\n"
 
 
     class FakeImporter extends Importer {
@@ -123,6 +139,28 @@ object ConfigParserTests extends Tests {
 
         expect("{: cow=\"moo\" inner={inner: cat=\"meow\" dog=\"bark\" } toplevel=\"hat\" }") {
             parse(TEST_DATA2).toString
+        }
+    }
+    
+    test("can't overload keys") {
+        expectThrow(classOf[AttributesException]) {
+            parse(TEST_DATA3).toString
+        }
+    }
+    
+    test("can't make up fake modifiers") {
+        expectThrow(classOf[ParseException]) {
+            parse("<upp name=\"fred\">\n</upp>\n")
+        }
+    }
+    
+    test("inherit") {
+        val a = parse(TEST_DATA4)
+        expect("{: daemon={daemon: uid=\"16\" ulimit_fd=\"32768\" } upp={upp (inherit=daemon): uid=\"23\" } }") {
+            a.toString
+        }
+        expect("32768") {
+            a.get("upp.ulimit_fd", "9")
         }
     }
 }

@@ -2,6 +2,7 @@ package net.lag.configgy
 
 import java.util.regex.Pattern
 
+import scala.collection._
 import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.lexical.Lexical
 import scala.util.parsing.input.{CharArrayReader, Reader}
@@ -17,6 +18,8 @@ import scala.util.parsing.syntax.Tokens
  */
 private[configgy] class ConfigLexer extends Lexical with Tokens {
 
+    //  -----  tokens:
+    
     case class Number(chars: String) extends Token {
         override def toString = "Number(" + chars + ")"
     }
@@ -25,8 +28,13 @@ private[configgy] class ConfigLexer extends Lexical with Tokens {
         override def toString = "Ident(" + chars + ")"
     }
     
-    case class OpenTag(chars: String) extends Token {
-        override def toString = "OpenTag(" + chars +  ")"
+    case class TagAttribute(name: String, value: String) extends Token {
+        override def toString = "TagAttribute(" + name + "," + value + ")"
+        override def chars = name + "=" + value
+    }
+    
+    case class OpenTag(chars: String, attrs: List[TagAttribute]) extends Token {
+        override def toString = "OpenTag(" + chars + "," + attrs + ")"
     }
     
     case class CloseTag(chars: String) extends Token {
@@ -83,7 +91,15 @@ private[configgy] class ConfigLexer extends Lexical with Tokens {
     }
 
     def tagName = letter ~ rep(letter | digit | elem('-') | elem('_')) ^^ { pack(_) }
-    def openTag = '<' ~> tagName <~ '>' ^^ { new OpenTag(_) }
+    def quotedVal = '"' ~ rep(chrExcept('"')) ~ '"' ^^ { case _ ~ x ~ _ => pack(x) }
+    
+    def tagAttribute = whitespace ~ tagName ~ '=' ~ quotedVal ^^ {
+        case _ ~ name ~ _ ~ value => new TagAttribute(name, value)
+    }
+    
+    def openTag = '<' ~ tagName ~ rep(tagAttribute) ~ '>' ^^ {
+        case _ ~ name ~ attrs ~ _ => new OpenTag(name, attrs)
+    }
     def closeTag = '<' ~> '/' ~> tagName <~ '>' ^^ { new CloseTag(_) }
     
     def assign = (str("=") | str("?=")) ^^ { case x => new Assign(x) }

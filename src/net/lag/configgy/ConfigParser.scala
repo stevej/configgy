@@ -17,7 +17,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
     type Tokens = ConfigLexer
     val lexical = new Tokens
     
-    import lexical.{Assign, CloseTag, Delim, Ident, Keyword, Number, OpenTag, QuotedString}
+    import lexical.{Assign, CloseTag, Delim, Ident, Keyword, Number, OpenTag, QuotedString, TagAttribute}
     
     val sections = new Stack[String]
     var prefix = ""
@@ -47,10 +47,15 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
         case Ident("off") => false
     })
 
-    def sectionOpen = accept("open tag", { case OpenTag(x) => x }) ^^ {
-        case x: String => {
-            sections += x
+    def sectionOpen = accept("open tag", { case x @ OpenTag(name, attrList) => x }) ^^ {
+        case OpenTag(name, attrList) => {
+            sections += name
             prefix = sections.mkString("", ".", ".")
+            val newBlock = attr.makeAttributes(sections.mkString("."))
+            for (a <- attrList) a match {
+                case TagAttribute("inherit", blockName) => newBlock.setInherit(attr.makeAttributes(blockName))
+                case _ => throw new ParseException("Unknown block modifier")
+            }
         }
     }
     
