@@ -16,7 +16,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
 
     private val cells = new mutable.HashMap[String, Cell]
     private var monitored = false
-    private var inherit: Attributes = null
+    private var inherit: Option[Attributes] = None
     
     
     def keys: Iterator[String] = cells.keys
@@ -24,9 +24,9 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     override def toString() = {
         val buffer = new StringBuilder("{")
         buffer ++= name
-        if (inherit != null) {
+        if (inherit.isDefined) {
             buffer ++= " (inherit="
-            buffer ++= inherit.name
+            buffer ++= inherit.get.name
             buffer ++= ")"
         }
         buffer ++= ": "
@@ -66,16 +66,18 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         if (elems.length > 1) {
             cells.get(elems(0)) match {
                 case Some(AttributesCell(x)) => x.lookupCell(elems(1))
-                case None => {
-                    if (inherit != null) inherit.lookupCell(key) else None
+                case None => inherit match {
+                    case Some(a) => a.lookupCell(key)
+                    case None => None
                 }
                 case _ => None
             }
         } else {
             cells.get(elems(0)) match {
                 case x @ Some(_) => x
-                case None => {
-                    if (inherit != null) inherit.lookupCell(key) else None
+                case None => inherit match {
+                    case Some(a) => a.lookupCell(key)
+                    case None => None
                 }
             }
         }
@@ -286,8 +288,8 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         }
     }
     
-    protected[configgy] def setInherit(attr: Attributes) = {
-        inherit = attr
+    protected[configgy] def inheritFrom(attr: Attributes) = {
+        inherit = Some(attr)
     }
     
     // make a deep copy of the Attributes tree.

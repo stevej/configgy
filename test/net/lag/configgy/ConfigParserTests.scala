@@ -51,6 +51,29 @@ object ConfigParserTests extends Tests {
         "<upp inherit=\"daemon\">\n" +
         "    uid = 23\n" +
         "</upp>\n"
+    
+    private val TEST_DATA5 =
+        "<daemon>\n" +
+        "    useless = 3\n" +
+        "    <base>\n" +
+        "        ulimit_fd = 32768\n" +
+        "    </base>\n" +
+        "</daemon>\n" +
+        "\n" +
+        "<upp inherit=\"daemon.base\">\n" +
+        "    uid = 16\n" +
+        "    <alpha inherit=\"upp\">\n" +
+        "        name=\"alpha\"\n" +
+        "    </alpha>\n" +
+        "    <beta inherit=\"daemon\">\n" +
+        "        name=\"beta\"\n" +
+        "    </beta>\n" +
+        "</upp>\n"
+    
+    private val EXP_DATA5 =
+        "{: daemon={daemon: base={daemon.base: ulimit_fd=\"32768\" } useless=\"3\" } " +
+        "upp={upp (inherit=daemon.base): alpha={upp.alpha (inherit=upp): name=\"alpha\" } " +
+        "beta={upp.beta (inherit=daemon): name=\"beta\" } uid=\"16\" } }"
 
 
     class FakeImporter extends Importer {
@@ -159,8 +182,25 @@ object ConfigParserTests extends Tests {
         expect("{: daemon={daemon: uid=\"16\" ulimit_fd=\"32768\" } upp={upp (inherit=daemon): uid=\"23\" } }") {
             a.toString
         }
-        expect("32768") {
-            a.get("upp.ulimit_fd", "9")
-        }
+        expect("32768") { a.get("upp.ulimit_fd", "9") }
+        expect("23") { a.get("upp.uid", "100") }
+    }
+    
+    test("complex inherit") {
+        val a = parse(TEST_DATA5)
+        expect(EXP_DATA5) { a.toString }
+        //"{: daemon={daemon: base={daemon.base: ulimit_fd="32768" } useless="3" } 
+        //upp={upp (inherit=daemon.base): alpha={upp.alpha (inherit=upp): name="alpha" }
+        // beta={upp.beta (inherit=daemon): name="beta" } uid="16" } }") {
+        expect("3") { a.get("daemon.useless", "14") }
+        expect("16") { a.get("upp.uid", "1") }
+        expect("32768") { a.get("upp.ulimit_fd", "1024") }
+        expect("23") { a.get("upp.name", "23") }
+        expect("alpha") { a.get("upp.alpha.name", "") }
+        expect("beta") { a.get("upp.beta.name", "") }
+        expect("32768") { a.get("upp.alpha.ulimit_fd", "") }
+        expect("3") { a.get("upp.beta.useless", "") }
+        expect("") { a.get("upp.alpha.useless", "") }
+        expect("") { a.get("upp.beta.ulimit_fd", "") }
     }
 }

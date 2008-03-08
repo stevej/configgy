@@ -53,7 +53,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
             prefix = sections.mkString("", ".", ".")
             val newBlock = attr.makeAttributes(sections.mkString("."))
             for (a <- attrList) a match {
-                case TagAttribute("inherit", blockName) => newBlock.setInherit(attr.makeAttributes(blockName))
+                case TagAttribute("inherit", blockName) => newBlock inheritFrom attr.makeAttributes(blockName)
                 case _ => throw new ParseException("Unknown block modifier")
             }
         }
