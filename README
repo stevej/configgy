@@ -4,5 +4,132 @@ TO-DO
 
 - documentation: why does this exist? how does it work?
 
-- <test inherit="base">
+- logging
+- syslog-ng support
+
+
+
+
+
+
+CONFIGGY
+========
+
+Configgy is a library for handling config files and logging for a scala
+daemon. The idea is that it should be simple and straightforward, allowing
+you to plug it in and get started quickly.
+
+(As of March 2008, only the config part is finished.)
+
+
+Why?
+----
+
+You would think config files would be a solved problem by now, but for some
+reason they're not. Java is still trying to shoehorn "property files" for
+the purpose (keys and values are strings, no blocks). Python is still trying
+to use INI files (!), and Ruby invented a new text marshalling format (YAML)
+and decided to abuse that for config files too. It's all kind of a sad mess.
+
+Configuration doesn't have to be a hard problem. My experience shows that
+only a few features are needed:
+
+    - key/value pairs can be set
+    - values can be bools, ints, strings, or lists of strings
+    - sets of key/value pairs can be grouped into blocks and nested
+      inside each other
+    - some blocks can inherit default values from other blocks
+    - values can be based (in some way) on previous values
+    - files can be "imported" into each other
+
+From the API side, it should be easy to find and manage key/value pairs
+and blocks. A library should also be able to "subscribe" to a block and
+be notified when values have been changed from somewhere else.
+
+None of property files, INI files, or YAML files can do this. So here we
+are.
+
+At Danger, after several false starts, we ended up with a server config
+file format very much like what I've implemented here (but it was more
+complex and had a few major flaws). Other projects have created similar
+formats. So I think this is an idea whose time has come.
+
+
+Config Files
+------------
+
+The config file format is simple and clean. It has a few advanced features,
+but limits itself to representing a nested structure of key/value pairs.
+It is always in UTF-8.
+
+Values are set like so::
+
+    server_name = "pingd"
+
+Key names follow the same rules as C (or Java or Python) symbols, except
+they may also contain dashes ("-") if you like.
+
+String values are in quotes, and have the usual escape codes, like ``\r``.
+``\xHH`` and ``\uHHHH`` also work.
+
+Int values don't need quotes, but are treated like strings and converted
+only at the last minute.
+
+Boolean values are turned "on" or "off"::
+
+    use_root_privs off
+
+String lists are just strings enclosed in brackets::
+
+    states = ["California", "Tennessee", "Idaho"]
+
+Groups of keys may be enclosed in an XML-like tag::
+
+    <pingd>
+        # set a high timeout for now.
+        timeout = 30
+    </pingd>
+
+Nested values can be accessed from the API and from within the config file
+as if they were in C structs, using dotted-name notation. So the same
+effect could have been done with::
+
+    pingd.timeout = 30
+
+
+Advanced Features
+-----------------
+
+There are a few features you may not use right away, but you'll usually
+start wanting after the code matures a bit.
+
+Previously-set config values can be included in new ones by using variable
+substitution, with shell syntax. This also pulls in values from the
+environment::
+
+    server_home = "$(HOME)/servers/pingd"
+    pid_file = "$(server_home)/pingd.pid"
+
+Files can be included/imported into each other::
+
+    include "$(server_home)/config/local.conf"
+
+(The context is preserved, so if you are inside a block, the imported file
+is injected inside that block too.) The default importer uses the local
+filesystem. You can set your own importer to use other sources.
+
+To set a value only if it hasn't been set earlier (possibly by an included
+file), use shell syntax::
+
+    server_home ?= "/opt/pingd"
+
+
+Usage from within scala
+-----------------------
+FIXME
+
+
+Subscription API
+----------------
+FIXME
 
