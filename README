@@ -75,9 +75,11 @@ String values are in quotes, and have the usual escape codes, like ``\r``.
 Int values don't need quotes, but are treated like strings and converted
 only at the last minute.
 
-Boolean values are turned "on" or "off"::
+Boolean values are turned "on" or "off" (or "true" or "false", with an
+optional equal sign -- whatever makes you happy)::
 
     use_root_privs off
+    drink_milk = false
 
 String lists are just strings enclosed in brackets::
 
