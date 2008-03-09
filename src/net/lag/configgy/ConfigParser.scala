@@ -25,7 +25,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
     
     def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose)
     
-    def value = number | string | stringList
+    def value = number | string | stringList | onoff | trueFalse
     def number = accept("number", { case Number(x) => if (x.contains('.')) x else Integer.parseInt(x) })
     def string = accept("string", { case QuotedString(x) => attr.interpolate(prefix, x) })
     def stringList = accept(Delim("[")) ~> repsep(string, Delim(",")) <~ accept(Delim("]")) ^^ { list => list.toArray }
@@ -38,13 +38,18 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
             case x: Int => attr(prefix + k) = x
             case x: String => attr(prefix + k) = x
             case x: Array[String] => attr(prefix + k) = x
+            case x: Boolean => attr(prefix + k) = x
         }
     }
-    def toggle = assignName ~ onoff ^^ { case k ~ v => attr(k) = v } 
+    def toggle = assignName ~ (onoff | trueFalse) ^^ { case k ~ v => attr(k) = v } 
     def assignName = accept("key", { case Ident(x) => x })
     def onoff = accept("on/off", {
         case Ident("on") => true
         case Ident("off") => false
+    })
+    def trueFalse = accept("true/false", {
+        case Ident("true") => true
+        case Ident("false") => false
     })
 
     def sectionOpen = accept("open tag", { case x @ OpenTag(name, attrList) => x }) ^^ {

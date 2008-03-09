@@ -117,6 +117,9 @@ object ConfigParserTests extends Tests {
         expect("{: whiskey=\"true\" wine=\"false\" }") {
             parse("wine off\nwhiskey on\n").toString
         }
+        expect("{: whiskey=\"true\" wine=\"false\" }") {
+            parse("wine = false\nwhiskey = on\n").toString
+        }
     }
     
     test("nested") {
