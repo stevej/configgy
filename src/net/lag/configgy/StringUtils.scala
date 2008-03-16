@@ -11,7 +11,7 @@ object StringUtils {
      * Scala does not yet (Dec 2007) support java's String.format natively.
      * Fake it by building the Object[] manually for a handful of params.
      */
-    def format(s: String, items: Any*) = String.format(s, (for (i <- items) yield i.asInstanceOf[Object]).toArray)
+    def format(s: String, items: Any*) = String.format(s, items.toArray.asInstanceOf[Array[Object]])
 
     
     /**
