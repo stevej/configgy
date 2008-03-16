@@ -24,7 +24,7 @@
     </target>
 
     <target name="compile" depends="init">
-        <scalac srcdir="src" destdir="${build.dir}" force="changed">
+        <scalac srcdir="src" destdir="${build.dir}" force="changed" deprecation="on">
             <classpath>
                 <path refid="scala.classpath" />
             </classpath>
