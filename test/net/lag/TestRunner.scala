@@ -1,6 +1,9 @@
-package net.lag.configgy;
+package net.lag
 
 import scala.testing.SUnit._
+
+import net.lag.configgy._
+import net.lag.logging._
 
 
 object TestRunner {
@@ -13,7 +16,8 @@ object TestRunner {
                                   ConfigLexerTests,
                                   AttributesTests,
                                   ConfigParserTests,
-                                  ConfigTests)
+                                  ConfigTests,
+                                  LoggingTests)
                                       
         val testCount = sum(for (t <- suite.buf) yield t.asInstanceOf[sorg.testing.Tests].tests.length)
         Console.println("Running " + testCount + " unit tests:")

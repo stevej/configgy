@@ -50,7 +50,7 @@
                <pathelement location="${build.dir}" />
                <pathelement location="${test.dir}" />
            </classpath>
-           <arg line="net.lag.configgy.TestRunner" />
+           <arg line="net.lag.TestRunner" />
        </java>
     </target>
     
