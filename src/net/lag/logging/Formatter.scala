@@ -2,6 +2,7 @@ package net.lag.logging
 
 import java.text.SimpleDateFormat
 import java.util.{Date, logging => javalog}
+import scala.collection.mutable
 
 import net.lag.configgy.StringUtils
 
@@ -51,29 +52,30 @@ class Formatter extends javalog.Formatter {
         }
 
         // allow multi-line log entries to be atomic:
-        var out = message.split("\n").toList.reverse
+        var lines = new mutable.ArrayBuffer[String]
+        lines ++= message.split("\n")
 
         if (record.getThrown != null) {
-            out = formatStackTrace(record.getThrown, record.getThrown.toString :: out)
+            lines += record.getThrown.toString
+            lines ++= formatStackTrace(record.getThrown)
         }
         val prefix = StringUtils.format("%s [%s] %s: ", level, DATE_FORMAT.format(new Date(record.getMillis)), name)
-        out.reverse.mkString(prefix, "\n" + prefix, "\n")
+        lines.mkString(prefix, "\n" + prefix, "\n")
     }
     
     // FIXME: might be nice to unmangle some scala names here.
-    private def formatStackTrace(t: Throwable, soFar: List[String]): List[String] = {
-        var out: List[String] = Nil
-        for (elem <- t.getStackTrace) {
-            out = StringUtils.format("    at %s", elem.toString) :: out
-        }
+    private def formatStackTrace(t: Throwable): mutable.ArrayBuffer[String] = {
+        var out = new mutable.ArrayBuffer[String]
+        out ++= (for (elem <- t.getStackTrace) yield StringUtils.format("    at %s", elem.toString))
         if (out.length > truncate_stack_traces_at) {
-            out = "    (...more...)" :: out.takeRight(truncate_stack_traces_at)
+            out = new mutable.ArrayBuffer[String] ++ out.take(truncate_stack_traces_at)
+            out += "    (...more...)"
         }
         if (t.getCause != null) {
-            out = StringUtils.format("Caused by %s", t.getCause.toString) :: out
-            out = formatStackTrace(t.getCause, out)
+            out += StringUtils.format("Caused by %s", t.getCause.toString)
+            out ++= formatStackTrace(t.getCause)
         }
-        out ::: soFar
+        out
     }
     
 }
