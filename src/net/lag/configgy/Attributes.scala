@@ -122,7 +122,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         if (monitored) {
             attr.setMonitored
         }
-        cells += key -> new AttributesCell(attr)
+        cells += Pair(key, new AttributesCell(attr))
         attr
     }
     
@@ -173,7 +173,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             case Some((attr, name)) => attr.set(name, value)
             case None => cells.get(key) match {
                 case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key) 
-                case _ => cells += key -> new StringCell(value)
+                case _ => cells += Pair(key, new StringCell(value))
             }
         }
     }
@@ -188,7 +188,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             case Some((attr, name)) => attr.set(name, value)
             case None => cells.get(key) match {
                 case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
-                case _ => cells += key -> new StringListCell(value)
+                case _ => cells += Pair(key, new StringListCell(value))
             }
         }
     }
@@ -301,7 +301,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
                 case StringListCell(x) => out(key) = x
                 case AttributesCell(x) => {
                     val attr = x.copy
-                    out.cells += key -> new AttributesCell(attr)
+                    out.cells += Pair(key, new AttributesCell(attr))
                 }
             }
         }

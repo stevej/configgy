@@ -117,7 +117,7 @@ class Config extends AttributeMap {
             }
         }
         node.subscribers += subscriber
-        subscriberKeys += subkey -> (node, subscriber)
+        subscriberKeys += Pair(subkey, (node, subscriber))
         new SubscriptionKey(this, subkey)
     }
     
