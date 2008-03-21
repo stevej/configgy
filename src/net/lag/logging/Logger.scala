@@ -18,7 +18,7 @@ case object DEBUG extends Level("DEBUG", 500)
 case object TRACE extends Level("TRACE", 400)
 
 
-class Logger private(name: String) extends javalog.Logger(name, null) {
+class Logger private(name: String, private val wrapped: javalog.Logger) {
     
     def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
     
@@ -27,13 +27,27 @@ class Logger private(name: String) extends javalog.Logger(name, null) {
         if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
             val record = new javalog.LogRecord(level, msg)
             record.setParameters(items.toArray.asInstanceOf[Array[Object]])
-            record.setLoggerName(getName)
+            record.setLoggerName(wrapped.getName)
             if (thrown != null) {
                 record.setThrown(thrown)
             }
-            log(record)
+            wrapped.log(record)
         }
     }
+    
+    // wrapped methods:
+    def addHandler(handler: javalog.Handler) = wrapped.addHandler(handler)
+    def getFilter() = wrapped.getFilter()
+    def getHandlers() = wrapped.getHandlers()
+    def getLevel() = wrapped.getLevel()
+    def getParent() = wrapped.getParent()
+    def getUseParentHandlers() = wrapped.getUseParentHandlers()
+    def isLoggable(level: javalog.Level) = wrapped.isLoggable(level)
+    def log(record: javalog.LogRecord) = wrapped.log(record)
+    def removeHandler(handler: javalog.Handler) = wrapped.removeHandler(handler)
+    def setFilter(filter: javalog.Filter) = wrapped.setFilter(filter)
+    def setLevel(level: javalog.Level) = wrapped.setLevel(level)
+    def setUseParentHandlers(use: Boolean) = wrapped.setUseParentHandlers(use)
     
     // convenience methods:
     def fatal(msg: String, items: Any*) = log(FATAL, msg, items: _*)
@@ -50,20 +64,14 @@ class Logger private(name: String) extends javalog.Logger(name, null) {
     def debug(thrown: Throwable, msg: String, items: Any*) = log(DEBUG, thrown, msg, items)
     def trace(msg: String, items: Any*) = log(TRACE, msg, items: _*)
     def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items)
-    
-    // these are needed to override java evilness:
-    def fatal(msg: String) = log(FATAL, "%s", msg)
-    def critical(msg: String) = log(CRITICAL, "%s", msg)
-    def error(msg: String) = log(ERROR, "%s", msg)
-    override def warning(msg: String) = log(WARNING, "%s", msg)
-    override def info(msg: String) = log(INFO, "%s", msg)
-    def debug(msg: String) = log(DEBUG, "%s", msg)
-    def trace(msg: String) = log(TRACE, "%s", msg)
 }
 
 
 object Logger {
     
+    // cache scala Logger objects per name
+    private val loggersCache = new mutable.HashMap[String, Logger]
+
     private val root = get("")
     root.setLevel(WARNING)
     
@@ -76,20 +84,21 @@ object Logger {
 
 
     def get(name: String): Logger = {
-        // all scala loggers will be under "scala."
-        val fullName = if (name == "") "scala" else ("scala." + name)
-        
-        val manager = javalog.LogManager.getLogManager
-        manager.getLogger(fullName) match {
-            case null => {
-                val logger = new Logger(fullName)
+        loggersCache.get(name) match {
+            case Some(logger) => logger
+            case None => {
+                val manager = javalog.LogManager.getLogManager
+                val logger = manager.getLogger(name) match {
+                    case null => {
+                        val javaLogger = javalog.Logger.getLogger(name)
+                        manager.addLogger(javaLogger)
+                        new Logger(name, javaLogger)
+                    }
+                    case x: javalog.Logger => new Logger(name, x)
+                }
                 logger.setUseParentHandlers(true)
-                manager.addLogger(logger)
+                loggersCache.put(name, logger)
                 logger
-            }
-            case x: Logger => x
-            case crufty => {
-                throw new RuntimeException("BAD, someone snuck cruft into the scala logging tree")
             }
         }
     }
@@ -113,22 +122,16 @@ object Logger {
         val e = manager.getLoggerNames
         while (e.hasMoreElements) {
             val item = manager.getLogger(e.nextElement.asInstanceOf[String])
-            if (item.isInstanceOf[Logger]) {
-                loggers += item.asInstanceOf[Logger]
-            }
+            loggers += get(item.getName())
         }
         loggers.elements
     }
     
-    def clearHandlers = {
-        for (handler <- javaRoot.getHandlers) {
-            javaRoot.removeHandler(handler)
-        }
+    def clearHandlers() = {
         for (logger <- elements) {
             for (handler <- logger.getHandlers) {
                 logger.removeHandler(handler)
             }
         }
     }
-
 }
