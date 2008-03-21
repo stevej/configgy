@@ -125,6 +125,20 @@ file), use shell syntax::
 
     server_home ?= "/opt/pingd"
 
+Common config blocks can be inherited by later blocks::
+
+    <daemon-base>
+        timeout = 15
+        chroot = "/opt/magic"
+    </daemon-base>
+    
+    <pingd inherit="daemon-base">
+        timeout = 30
+    </ping>
+
+The pingd block will use its own value of "timeout" (30), but will inherit
+"chroot" from daemon-base. That is, "pingd.chroot" will be "/opt/magic".
+
 
 Usage from within scala
 -----------------------
