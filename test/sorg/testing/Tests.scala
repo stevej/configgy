@@ -11,7 +11,14 @@ abstract class Tests extends Test with Assert {
     def test(desc: String)(t: => Unit) : Unit = {
         // careful: this pushes the tests in reverse order like a stack, so
         // we have to reverse them back later.
-        tests = Pair(desc, () => { setUp; t; tearDown }) :: tests
+        tests = Pair(desc, () => {
+            setUp
+            try {
+                t
+            } finally {
+                tearDown
+            }
+        }) :: tests
     }
 
     def setUp = { }
