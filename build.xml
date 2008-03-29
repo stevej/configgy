@@ -44,7 +44,7 @@
     </target>
     
     <target name="test" depends="compile-tests">
-       <java classname="scala.tools.nsc.MainGenericRunner" fork="true">
+       <java classname="scala.tools.nsc.MainGenericRunner" fork="true" failonerror="true">
            <classpath>
                <path refid="scala.classpath" />
                <pathelement location="${build.dir}" />

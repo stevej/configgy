@@ -22,6 +22,8 @@ abstract class Handler extends javalog.Handler {
         formatter.truncate_stack_traces_at = n
     }
     
+    def use_utc = getFormatter.asInstanceOf[Formatter].use_utc
+    def use_utc_=(utc: Boolean) = getFormatter.asInstanceOf[Formatter].use_utc = utc
 }
 
 

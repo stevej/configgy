@@ -36,6 +36,7 @@ object TestRunner {
                 }
                 Console.println
             }
+            System.exit(1)
         }
     }
 

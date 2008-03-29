@@ -1,5 +1,6 @@
 package net.lag.logging
 
+import java.util.{logging => javalog}
 import sorg.testing._
 
 
@@ -23,6 +24,14 @@ object Crazy {
 }
 
 
+class TimeWarpingStringHandler extends StringHandler {
+    override def publish(record: javalog.LogRecord) = {
+        record.setMillis(1206769996722L)
+        super.publish(record)
+    }
+}
+
+
 object LoggingTests extends Tests {
     
     override def testName = "LoggingTests"
@@ -31,7 +40,7 @@ object LoggingTests extends Tests {
 
     override def setUp = {
         Logger.clearHandlers
-        handler = new StringHandler
+        handler = new TimeWarpingStringHandler
         Logger.get("").addHandler(handler)
     }
     
@@ -40,20 +49,23 @@ object LoggingTests extends Tests {
     }
     
         
-    // turn logged console lines into a list of repeatable strings (date & time removed)
+    // turn logged console lines into a list of repeatable strings
     private def eat(in: String) = {
-        val lines = in.split("\n")
-        var out: List[String] = Nil
-        for (x <- lines) {
-            out = x.substring(0, 5) + "20080315-01:23:45.999" + x.substring(26) :: out
-        }
-        out.reverse
+        in.split("\n").toList
     }
         
     test("simple") {
         val log = Logger.get("")
         log.error("error!")
-        expect(List("ERR [20080315-01:23:45.999] (root): error!")) { eat(handler.toString) }
+        expect(List("ERR [20080328-22:53:16.722] (root): error!")) { eat(handler.toString) }
+    }
+    
+    // verify that we can ask logs to be written in UTC
+    test("utc") {
+        val log = Logger.get("")
+        log.getHandlers()(0).asInstanceOf[Handler].use_utc = true
+        log.error("error!")
+        expect(List("ERR [20080329-05:53:16.722] (root): error!")) { eat(handler.toString) }
     }
     
     test("packages") {
@@ -62,8 +74,8 @@ object LoggingTests extends Tests {
         val log2 = Logger.get("net.lag.configgy.Skeletor")
         log2.warning("I am also coming for you!")
         
-        expect(List("WAR [20080315-01:23:45.999] logging: I am coming for you!",
-                    "WAR [20080315-01:23:45.999] configgy: I am also coming for you!")) {
+        expect(List("WAR [20080328-22:53:16.722] logging: I am coming for you!",
+                    "WAR [20080328-22:53:16.722] configgy: I am also coming for you!")) {
             eat(handler.toString)
         }
     }
@@ -76,9 +88,9 @@ object LoggingTests extends Tests {
         log1.trace("Catfood query.")
         log1.error("Help!")
         
-        expect(List("WAR [20080315-01:23:45.999] logging: I am coming for you!",
-                    "DEB [20080315-01:23:45.999] logging: Loading supplies...",
-                    "ERR [20080315-01:23:45.999] logging: Help!")) {
+        expect(List("WAR [20080328-22:53:16.722] logging: I am coming for you!",
+                    "DEB [20080328-22:53:16.722] logging: Loading supplies...",
+                    "ERR [20080328-22:53:16.722] logging: Help!")) {
             eat(handler.toString)
         }
     }
@@ -88,7 +100,7 @@ object LoggingTests extends Tests {
         val log1 = Logger.get("net.lag.whiskey.Train")
         log1.critical("Something terrible happened that may take a very long time to explain because I write crappy log messages.")
         
-        expect(List("CRI [20080315-01:23:45.999] whiskey: Something terrible happened th...")) {
+        expect(List("CRI [20080328-22:53:16.722] whiskey: Something terrible happened th...")) {
             eat(handler.toString)
         }
     }
@@ -102,14 +114,14 @@ object LoggingTests extends Tests {
             case t: Throwable => log1.error(t, "Exception!")
         }
         
-        expect(List("ERR [20080315-01:23:45.999] whiskey: Exception!",
-                    "ERR [20080315-01:23:45.999] whiskey: java.lang.Exception: Aie!",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:9)",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
-                    "ERR [20080315-01:23:45.999] whiskey:     (...more...)")) {
+        expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
+                    "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: Aie!",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:10)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     (...more...)")) {
             eat(handler.toString)
         }
     }
@@ -123,16 +135,17 @@ object LoggingTests extends Tests {
             case t: Throwable => log1.error(t, "Exception!")
         }
         
-        expect(List("ERR [20080315-01:23:45.999] whiskey: Exception!",
-                    "ERR [20080315-01:23:45.999] whiskey: java.lang.Exception: grrrr",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:20)",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.LoggingTests$$anonfun$6.apply(LoggingTests.scala:121)",
-                    "ERR [20080315-01:23:45.999] whiskey:     (...more...)",
-                    "ERR [20080315-01:23:45.999] whiskey: Caused by java.lang.Exception: Aie!",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:9)",
-                    "ERR [20080315-01:23:45.999] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
-                    "ERR [20080315-01:23:45.999] whiskey:     (...more...)")) {
+        expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
+                    "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:21)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:133)",
+                    "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
+                    "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:10)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     (...more...)")) {
             eat(handler.toString)
         }
     }
+    
 }

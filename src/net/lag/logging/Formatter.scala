@@ -1,7 +1,7 @@
 package net.lag.logging
 
 import java.text.SimpleDateFormat
-import java.util.{Date, logging => javalog}
+import java.util.{Date, GregorianCalendar, TimeZone, logging => javalog}
 import scala.collection.mutable
 
 import net.lag.configgy.StringUtils
@@ -23,8 +23,21 @@ class Formatter extends javalog.Formatter {
     
     var truncate_at: Int = 0
     var truncate_stack_traces_at: Int = 30
+    private var _use_utc = false
     
     private val DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
+    
+    def use_utc = _use_utc
+    
+    def use_utc_=(utc: Boolean) = {
+        _use_utc = utc
+        if (utc) {
+            // kind of ridiculous.
+            DATE_FORMAT.setCalendar(new GregorianCalendar(TimeZone.getTimeZone("UTC")))
+        } else {
+            DATE_FORMAT.setCalendar(new GregorianCalendar)
+        }
+    }
     
     override def format(record: javalog.LogRecord): String = {
         val level = record.getLevel match {

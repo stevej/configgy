@@ -2,11 +2,10 @@
 TO-DO
 =====
 
-- documentation: why does this exist? how does it work?
-
-- logging
+- auto-rolling logfile support
 - syslog-ng support
-
+- try out new scalatest stuff?
+    - not yet. it's still very verbose and complex.
 
 
 
