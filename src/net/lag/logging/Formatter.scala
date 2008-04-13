@@ -7,6 +7,24 @@ import scala.collection.mutable
 import net.lag.configgy.StringUtils
 
 
+object Formatter {
+    // FIXME: might be nice to unmangle some scala names here.
+    private[logging] def formatStackTrace(t: Throwable, limit: Int): mutable.ArrayBuffer[String] = {
+        var out = new mutable.ArrayBuffer[String]
+        out ++= (for (elem <- t.getStackTrace) yield StringUtils.format("    at %s", elem.toString))
+        if (out.length > limit) {
+            out = new mutable.ArrayBuffer[String] ++ out.take(limit)
+            out += "    (...more...)"
+        }
+        if (t.getCause != null) {
+            out += StringUtils.format("Caused by %s", t.getCause.toString)
+            out ++= formatStackTrace(t.getCause, limit)
+        }
+        out
+    }
+}
+
+
 /**
  * A standard log formatter for scala.
  *
@@ -24,6 +42,7 @@ class Formatter extends javalog.Formatter {
     var truncate_at: Int = 0
     var truncate_stack_traces_at: Int = 30
     private var _use_utc = false
+    var calendar = new GregorianCalendar
     
     private val DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
     
@@ -33,10 +52,11 @@ class Formatter extends javalog.Formatter {
         _use_utc = utc
         if (utc) {
             // kind of ridiculous.
-            DATE_FORMAT.setCalendar(new GregorianCalendar(TimeZone.getTimeZone("UTC")))
+            calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
         } else {
-            DATE_FORMAT.setCalendar(new GregorianCalendar)
+            calendar = new GregorianCalendar
         }
+        DATE_FORMAT.setCalendar(calendar)
     }
     
     override def format(record: javalog.LogRecord): String = {
@@ -70,25 +90,9 @@ class Formatter extends javalog.Formatter {
 
         if (record.getThrown != null) {
             lines += record.getThrown.toString
-            lines ++= formatStackTrace(record.getThrown)
+            lines ++= Formatter.formatStackTrace(record.getThrown, truncate_stack_traces_at)
         }
         val prefix = StringUtils.format("%s [%s] %s: ", level, DATE_FORMAT.format(new Date(record.getMillis)), name)
         lines.mkString(prefix, "\n" + prefix, "\n")
     }
-    
-    // FIXME: might be nice to unmangle some scala names here.
-    private def formatStackTrace(t: Throwable): mutable.ArrayBuffer[String] = {
-        var out = new mutable.ArrayBuffer[String]
-        out ++= (for (elem <- t.getStackTrace) yield StringUtils.format("    at %s", elem.toString))
-        if (out.length > truncate_stack_traces_at) {
-            out = new mutable.ArrayBuffer[String] ++ out.take(truncate_stack_traces_at)
-            out += "    (...more...)"
-        }
-        if (t.getCause != null) {
-            out += StringUtils.format("Caused by %s", t.getCause.toString)
-            out ++= formatStackTrace(t.getCause)
-        }
-        out
-    }
-    
 }

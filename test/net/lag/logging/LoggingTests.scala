@@ -1,6 +1,7 @@
 package net.lag.logging
 
-import java.util.{logging => javalog}
+import java.io.{BufferedReader, FileInputStream, InputStreamReader}
+import java.util.{Date, logging => javalog}
 import sorg.testing._
 
 
@@ -25,6 +26,16 @@ object Crazy {
 
 
 class TimeWarpingStringHandler extends StringHandler {
+    override def publish(record: javalog.LogRecord) = {
+        record.setMillis(1206769996722L)
+        super.publish(record)
+    }
+}
+
+
+class ImmediatelyRollingFileHandler(filename: String, policy: Policy) extends FileHandler(filename, policy) {
+    override def computeNextRollTime(): Long = System.currentTimeMillis + 100
+
     override def publish(record: javalog.LogRecord) = {
         record.setMillis(1206769996722L)
         super.publish(record)
@@ -116,11 +127,11 @@ object LoggingTests extends Tests {
         
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: Aie!",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:10)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)")) {
             eat(handler.toString)
         }
@@ -137,15 +148,53 @@ object LoggingTests extends Tests {
         
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:21)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:133)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:22)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:144)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                     "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:10)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:12)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)")) {
             eat(handler.toString)
         }
     }
     
+    test("log roll timing") {
+        val rollHandler = new FileHandler("/tmp/test.log", Hourly)
+        expect(1206770400000L) {
+            rollHandler.computeNextRollTime(1206769996722L)
+        }
+        expect(1206774000000L) {
+            rollHandler.computeNextRollTime(1206770400000L)
+        }
+        expect(1206777600000L) {
+            rollHandler.computeNextRollTime(1206774000001L)
+        }
+    }
+    
+    // verify that at the proper time, the log file rolls and resets.
+    test("log roll") {
+        withTempFolder {
+            case folderName: String => {
+                val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly)
+                val log = Logger.get("net.lag.whiskey.Train")
+                val date = new Date()
+                log.addHandler(rollHandler)
+                log.fatal("first file.")
+                
+                Thread.sleep(150)
+                
+                log.fatal("second file.")
+                rollHandler.close()
+                
+                val movedFilename = folderName + "/test-" + rollHandler.timeSuffix(date) + ".log"
+                expect("FAT [20080328-22:53:16.722] whiskey: first file.") {
+                    new BufferedReader(new InputStreamReader(new FileInputStream(movedFilename), "UTF-8")).readLine
+                }
+                expect("FAT [20080328-22:53:16.722] whiskey: second file.") {
+                    new BufferedReader(new InputStreamReader(new FileInputStream(folderName + "/test.log"), "UTF-8")).readLine
+                }
+            }
+        }
+    }
 }

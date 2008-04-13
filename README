@@ -2,8 +2,10 @@
 TO-DO
 =====
 
-- auto-rolling logfile support
+- license
 - syslog-ng support
+- config for logging
+- optional buffer queue for the log?
 - try out new scalatest stuff?
     - not yet. it's still very verbose and complex.
 

@@ -1,5 +1,6 @@
 package net.lag.logging
 
+//import java.text.SimpleDateFormat
 import java.util.{logging => javalog}
 import scala.collection.mutable
 
@@ -24,6 +25,7 @@ abstract class Handler extends javalog.Handler {
     
     def use_utc = getFormatter.asInstanceOf[Formatter].use_utc
     def use_utc_=(utc: Boolean) = getFormatter.asInstanceOf[Formatter].use_utc = utc
+    def calendar = getFormatter.asInstanceOf[Formatter].calendar
 }
 
 

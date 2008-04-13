@@ -1,6 +1,8 @@
 package sorg.testing;
 
-import scala.testing.SUnit._;
+import java.io.File
+import scala.testing.SUnit._
+
 
 abstract class Tests extends Test with Assert {
     type TestExp = () => Unit;
@@ -63,4 +65,18 @@ abstract class Tests extends Test with Assert {
         }
     }
 
+    def withTempFolder(f: (String) => Any): Unit = {
+        var folderName: String = null
+        do {
+            folderName = "/tmp/scala-test-" + System.currentTimeMillis
+        } while (! new File(folderName).mkdir) 
+        try {
+            f(folderName)
+        } finally {
+            for (val filename <- new File(folderName).listFiles) {
+                filename.delete
+            }
+            new File(folderName).delete
+        }
+    }
 }
