@@ -52,7 +52,7 @@ class StringHandler extends Handler {
  */
 class ConsoleHandler extends Handler {
     def publish(record: javalog.LogRecord) = {
-        System.err.println(getFormatter().format(record))
+        System.err.print(getFormatter().format(record))
     }
     
     def close() = { }
