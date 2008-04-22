@@ -1,6 +1,5 @@
 package net.lag.logging
 
-//import java.text.SimpleDateFormat
 import java.util.{logging => javalog}
 import scala.collection.mutable
 
@@ -53,7 +52,7 @@ class StringHandler extends Handler {
  */
 class ConsoleHandler extends Handler {
     def publish(record: javalog.LogRecord) = {
-        Console.print(getFormatter().format(record))
+        System.err.println(getFormatter().format(record))
     }
     
     def close() = { }

@@ -12,12 +12,14 @@ case class Weekly(dayOfWeek: Int) extends Policy
 
 
 /**
+ * A log handler that writes log entries into a file, and rolls this file
+ * at a requested interval (hourly, daily, or weekly).
  */
 class FileHandler(val filename: String, val policy: Policy) extends Handler {
 
-    var stream: Writer = null
-    var openTime: Long = 0
-    var nextRollTime: Long = 0
+    private var stream: Writer = null
+    private var openTime: Long = 0
+    private var nextRollTime: Long = 0
     openLog()
     
     
@@ -35,7 +37,10 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
         openTime = System.currentTimeMillis
         nextRollTime = computeNextRollTime()
     }
-          
+    
+    /**
+     * Compute the suffix for a rolled logfile, based on the roll policy.
+     */
     def timeSuffix(date: Date) = {
         val dateFormat = policy match {
             case Hourly => new SimpleDateFormat("yyyyMMdd-HH")

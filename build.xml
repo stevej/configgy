@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="configgy" default="default" basedir=".">
-    <description>Builds, tests, and runs the project configgy.</description>
+    <description> Simple configuration and logging for scala. </description>
+    
+    <property name="version" value="0.9" />
     
     <property name="build.dir" value="build" />
     <property name="test.dir" value="build-test" />
@@ -53,6 +55,12 @@
            <arg line="net.lag.TestRunner" />
        </java>
     </target>
+
+    <target name="jar" depends="test">
+        <jar destfile="configgy-${version}.jar">
+            <fileset dir="${build.dir}" />
+        </jar>
+    </target>
     
     <target name="docs">
         <mkdir dir="${docs.dir}" />
@@ -60,6 +68,7 @@
             <classpath refid="scala.classpath" />
         </scaladoc>
     </target>
+    
 
     <target name="clean" depends="init">
         <delete dir="${build.dir}"/>
