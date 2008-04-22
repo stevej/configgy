@@ -6,6 +6,7 @@ import java.util.{Calendar, Date, logging => javalog}
 
 
 sealed abstract class Policy
+case object Never extends Policy
 case object Hourly extends Policy
 case object Daily extends Policy
 case class Weekly(dayOfWeek: Int) extends Policy
@@ -43,6 +44,7 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
      */
     def timeSuffix(date: Date) = {
         val dateFormat = policy match {
+            case Never => new SimpleDateFormat("yyyy")
             case Hourly => new SimpleDateFormat("yyyyMMdd-HH")
             case Daily => new SimpleDateFormat("yyyyMMdd")
             case Weekly(_) => new SimpleDateFormat("yyyyMMdd")
@@ -62,6 +64,9 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
         next.set(Calendar.SECOND, 0)
         next.set(Calendar.MINUTE, 0)
         policy match {
+            case Never => {
+                next.add(Calendar.YEAR, 100)
+            }
             case Hourly => {
                 next.add(Calendar.HOUR_OF_DAY, 1)
             }
