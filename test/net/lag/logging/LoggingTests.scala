@@ -4,6 +4,8 @@ import java.io.{BufferedReader, FileInputStream, InputStreamReader}
 import java.util.{Date, logging => javalog}
 import sorg.testing._
 
+import net.lag.configgy.Config
+
 
 object Crazy {
     def cycle(n: Int): Unit = {
@@ -127,11 +129,11 @@ object LoggingTests extends Tests {
         
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: Aie!",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:15)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:15)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:15)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:15)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)")) {
             eat(handler.toString)
         }
@@ -148,12 +150,12 @@ object LoggingTests extends Tests {
         
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:22)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:144)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:24)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:146)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                     "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:11)",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:13)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:15)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)")) {
             eat(handler.toString)
         }
@@ -175,26 +177,46 @@ object LoggingTests extends Tests {
     // verify that at the proper time, the log file rolls and resets.
     test("log roll") {
         withTempFolder {
-            case folderName: String => {
-                val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly)
-                val log = Logger.get("net.lag.whiskey.Train")
-                val date = new Date()
-                log.addHandler(rollHandler)
-                log.fatal("first file.")
-                
-                Thread.sleep(150)
-                
-                log.fatal("second file.")
-                rollHandler.close()
-                
-                val movedFilename = folderName + "/test-" + rollHandler.timeSuffix(date) + ".log"
-                expect("FAT [20080328-22:53:16.722] whiskey: first file.") {
-                    new BufferedReader(new InputStreamReader(new FileInputStream(movedFilename), "UTF-8")).readLine
-                }
-                expect("FAT [20080328-22:53:16.722] whiskey: second file.") {
-                    new BufferedReader(new InputStreamReader(new FileInputStream(folderName + "/test.log"), "UTF-8")).readLine
-                }
+            val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly)
+            val log = Logger.get("net.lag.whiskey.Train")
+            val date = new Date()
+            log.addHandler(rollHandler)
+            log.fatal("first file.")
+            
+            Thread.sleep(150)
+            
+            log.fatal("second file.")
+            rollHandler.close()
+            
+            val movedFilename = folderName + "/test-" + rollHandler.timeSuffix(date) + ".log"
+            expect("FAT [20080328-22:53:16.722] whiskey: first file.") {
+                new BufferedReader(new InputStreamReader(new FileInputStream(movedFilename), "UTF-8")).readLine
             }
+            expect("FAT [20080328-22:53:16.722] whiskey: second file.") {
+                new BufferedReader(new InputStreamReader(new FileInputStream(folderName + "/test.log"), "UTF-8")).readLine
+            }
+        }
+    }
+    
+        
+    test("log config") {
+        withTempFolder {
+            val TEST_DATA =
+                "node=\"net.lag\"\n" +
+                "filename=\"" + folderName + "/test.log\"\n" +
+                "level=\"debug\"\n" +
+                "truncate=1024\n"
+
+            val c = new Config
+            c.load(TEST_DATA)
+            val log = Logger.configure(c)
+            
+            expect(DEBUG) { log.getLevel }
+            expect(1) { log.getHandlers.length }
+            val h = log.getHandlers()(0)
+            expect(folderName + "/test.log") { h.asInstanceOf[FileHandler].filename }
+            expect("net.lag") { log.name }
+            expect(1024) { h.asInstanceOf[Handler].truncate_at }
         }
     }
 }

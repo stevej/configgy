@@ -1,14 +1,16 @@
 package net.lag.logging
 
 import java.text.SimpleDateFormat
-import java.util.{Date, logging => javalog}
+import java.util.{Calendar, Date, logging => javalog}
 import scala.collection.mutable
 
-import net.lag.configgy.StringUtils
+import net.lag.configgy.{AttributesException, AttributeMap, StringUtils}
 
 
 // replace java's ridiculous log levels with the standard ones.
-sealed case class Level(name: String, value: Int) extends javalog.Level(name, value)
+sealed case class Level(name: String, value: Int) extends javalog.Level(name, value) {
+    Logger.levelsMap(name) = this
+}
 case object FATAL extends Level("FATAL", 1000)
 case object CRITICAL extends Level("CRITICAL", 970)
 case object ERROR extends Level("ERROR", 930)
@@ -18,7 +20,7 @@ case object DEBUG extends Level("DEBUG", 500)
 case object TRACE extends Level("TRACE", 400)
 
 
-class Logger private(name: String, private val wrapped: javalog.Logger) {
+class Logger private(val name: String, private val wrapped: javalog.Logger) {
     
     def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
     
@@ -69,11 +71,13 @@ class Logger private(name: String, private val wrapped: javalog.Logger) {
 
 object Logger {
     
+    private[logging] val levelsMap = new mutable.HashMap[String, Level]
+    
     // cache scala Logger objects per name
     private val loggersCache = new mutable.HashMap[String, Logger]
 
     private val root = get("")
-    root.setLevel(WARNING)
+    root.setLevel(INFO)
     
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
@@ -133,5 +137,61 @@ object Logger {
                 logger.removeHandler(handler)
             }
         }
+    }
+    
+    /**
+     * Create a Logger (or find an existing one) and configure it according
+     * to a set of config keys.
+     *
+     * @throws AttributeException if a config value can't be parsed correctly
+     *     (some settings can only be one of a small possible set of values)
+     */
+    def configure(config: AttributeMap): Logger = {
+        val logger = Logger.get(config.get("node", ""))
+        for (val handler <- logger.getHandlers) {
+            logger.removeHandler(handler)
+        }
+        
+        var handlers: List[Handler] = Nil
+
+        if (config.getBool("console", false)) {
+            handlers = new ConsoleHandler :: handlers
+        }
+        
+        // options for using a logfile
+        for (val filename <- config.get("filename")) {
+            // i bet there's an easier way to do this.
+            val policy = config.get("roll", "never").toLowerCase match {
+                case "never" => Never
+                case "hourly" => Hourly
+                case "daily" => Daily
+                case "sunday" => Weekly(Calendar.SUNDAY)
+                case "monday" => Weekly(Calendar.MONDAY)
+                case "tuesday" => Weekly(Calendar.TUESDAY)
+                case "wednesday" => Weekly(Calendar.WEDNESDAY)
+                case "thursday" => Weekly(Calendar.THURSDAY)
+                case "friday" => Weekly(Calendar.FRIDAY)
+                case "saturday" => Weekly(Calendar.SATURDAY)
+                case x => throw new AttributesException("Unknown logfile rolling policy: " + x)
+            }
+            handlers = new FileHandler(filename, policy) :: handlers
+        }
+        
+        for (val handler <- handlers) {
+            handler.use_utc = config.getBool("utc", false)
+            handler.truncate_at = config.getInt("truncate", 0)
+            handler.truncate_stack_traces_at = config.getInt("truncate_stack_traces", 30)
+            logger.addHandler(handler)
+        }
+        
+        val levelName = config.get("level", "warning").toUpperCase
+        levelsMap.get(levelName) match {
+            case Some(level) => logger.setLevel(level)
+            case None => throw new AttributesException("Unknown log level: " + levelName)
+        }
+        
+        logger.setUseParentHandlers(config.getBool("use_parents", true))
+        
+        logger
     }
 }
