@@ -65,18 +65,22 @@ abstract class Tests extends Test with Assert {
         }
     }
 
-    def withTempFolder(f: (String) => Any): Unit = {
-        var folderName: String = null
+    private val _folderName = new ThreadLocal[File]
+    
+    def withTempFolder(f: => Any): Unit = {
+        var folder: File = null
         do {
-            folderName = "/tmp/scala-test-" + System.currentTimeMillis
-        } while (! new File(folderName).mkdir) 
+            folder = new File("/tmp/scala-test-" + System.currentTimeMillis)
+        } while (! folder.mkdir)
+        _folderName.set(folder)
+        
         try {
-            f(folderName)
+            f
         } finally {
-            for (val filename <- new File(folderName).listFiles) {
-                filename.delete
-            }
-            new File(folderName).delete
+            folder.listFiles foreach { _.delete }
+            folder.delete
         }
     }
+    
+    def folderName = { _folderName.get.getPath }
 }
