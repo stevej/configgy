@@ -67,7 +67,11 @@ class FilesystemImporter(val baseFolder: String) extends Importer {
 class ResourceImporter extends Importer {
     def importFile(filename: String): String = {
         try {
-            streamToString(ClassLoader.getSystemClassLoader.getResourceAsStream(filename))
+            val stream = ClassLoader.getSystemClassLoader.getResourceAsStream(filename)
+            if (stream == null) {
+                throw new ParseException("Can't find resource: " + filename)
+            }
+            streamToString(stream)
         } catch {
             case x => throw new ParseException(x.toString)
         }

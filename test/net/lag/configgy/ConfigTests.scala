@@ -162,4 +162,25 @@ object ConfigTests extends Tests {
             expect("{: fruit=\"17\" punch=\"23\" }") { c.toString }
         }
     }
+    
+    test("include from resource") {
+        /* kinda cheaty: we know the current folder is the project root,
+         * so we can stuff something in build-test/ briefly to get it to
+         * appear in the classpath.
+         */
+        val tempFilename = new File(new File(".").getAbsolutePath, "build-test/happy.conf")
+        try {
+            val data1 = "commie = 501\n"
+            val f1 = new FileOutputStream(tempFilename)
+            f1.write(data1.getBytes)
+            f1.close
+            
+            val c = new Config
+            c.importer = new ResourceImporter
+            c.load("include \"happy.conf\"\n")
+            expect("{: commie=\"501\" }") { c.toString }
+        } finally {
+            tempFilename.delete
+        }
+    }
 }

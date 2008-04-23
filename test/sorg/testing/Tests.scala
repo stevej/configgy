@@ -76,6 +76,7 @@ abstract class Tests extends Test with Assert {
                 f.delete
             }
         }
+        folder.delete
     }
     
     def withTempFolder(f: => Any): Unit = {
