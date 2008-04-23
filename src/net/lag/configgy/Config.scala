@@ -1,5 +1,6 @@
 package net.lag.configgy
 
+import java.io.File
 import scala.collection.{Map, Set}
 import scala.collection.{immutable, mutable}
 
@@ -89,7 +90,7 @@ class Config extends AttributeMap {
     private val subscribers = new SubscriptionNode
     private val subscriberKeys = new mutable.HashMap[Int, (SubscriptionNode, Subscriber)]
     private var nextKey = 1
-    var importer: Importer = new FilesystemImporter
+    var importer: Importer = new FilesystemImporter(new File(".").getCanonicalPath)
 
     def load(data: String) = {
         new ConfigParser(root, importer).parse(data)
@@ -97,6 +98,11 @@ class Config extends AttributeMap {
     }
     
     def loadFile(filename: String) = {
+        load(importer.importFile(filename))
+    }
+    
+    def loadFile(path: String, filename: String) = {
+        importer = new FilesystemImporter(path)
         load(importer.importFile(filename))
     }
     

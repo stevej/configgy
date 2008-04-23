@@ -1,5 +1,7 @@
 package net.lag.configgy
 
+import java.io.{File, FileOutputStream}
+
 import sorg.testing._
 
 
@@ -139,5 +141,25 @@ object ConfigTests extends Tests {
         expect(true) { betasub.used }
         expect("{alpha.beta: gamma=\"hello\" }") { betasub.savedCurrent.get.toString }
         expect("{alpha.beta: gamma=\"goodbye\" }") { betasub.savedReplacement.get.toString }
+    }
+    
+    test("relative include") {
+        withTempFolder {
+            val inner = new File(folderName, "inner")
+            inner.mkdir
+            
+            val data1 = "fruit = 17\ninclude \"inner/punch.conf\"\n"
+            val f1 = new FileOutputStream(new File(folderName, "fruit.conf"))
+            f1.write(data1.getBytes)
+            f1.close
+            val data2 = "punch = 23\n"
+            val f2 = new FileOutputStream(new File(inner, "punch.conf"))
+            f2.write(data2.getBytes)
+            f2.close
+            
+            val c = new Config
+            c.loadFile(folderName, "fruit.conf")
+            expect("{: fruit=\"17\" punch=\"23\" }") { c.toString }
+        }
     }
 }

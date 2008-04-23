@@ -1,6 +1,6 @@
 package net.lag.configgy;
 
-import java.io.{BufferedReader, InputStream, InputStreamReader, FileInputStream}
+import java.io.{BufferedReader, File, FileInputStream, InputStream, InputStreamReader}
 
 
 /**
@@ -45,10 +45,14 @@ trait Importer {
  * An Importer that looks for imported config files in the filesystem.
  * This is the default importer.
  */
-class FilesystemImporter extends Importer {
+class FilesystemImporter(val baseFolder: String) extends Importer {
     def importFile(filename: String): String = {
+        var f = new File(filename)
+        if (! f.isAbsolute) {
+            f = new File(baseFolder, filename)
+        }
         try {
-            streamToString(new FileInputStream(filename))
+            streamToString(new FileInputStream(f))
         } catch {
             case x => throw new ParseException(x.toString)
         }
