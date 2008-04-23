@@ -67,6 +67,17 @@ abstract class Tests extends Test with Assert {
 
     private val _folderName = new ThreadLocal[File]
     
+    // recursively delete a folder. should be built in. bad java.
+    private def deleteFolder(folder: File): Unit = {
+        for (val f <- folder.listFiles) {
+            if (f.isDirectory) {
+                deleteFolder(f)
+            } else {
+                f.delete
+            }
+        }
+    }
+    
     def withTempFolder(f: => Any): Unit = {
         var folder: File = null
         do {
@@ -77,8 +88,7 @@ abstract class Tests extends Test with Assert {
         try {
             f
         } finally {
-            folder.listFiles foreach { _.delete }
-            folder.delete
+            deleteFolder(folder)
         }
     }
     

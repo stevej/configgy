@@ -2,11 +2,11 @@
 TO-DO
 =====
 
-- license
 - syslog-ng support
 - config for logging
+- config should import files relative to a given path (config.load(path, filename))
 - optional buffer queue for the log?
-
+- test for ResourceImporter
 
 
 
