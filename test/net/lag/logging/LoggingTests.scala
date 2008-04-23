@@ -209,7 +209,7 @@ object LoggingTests extends Tests {
 
             val c = new Config
             c.load(TEST_DATA)
-            val log = Logger.configure(c)
+            val log = Logger.configure(c, false, false)
             
             expect(DEBUG) { log.getLevel }
             expect(1) { log.getHandlers.length }
@@ -217,6 +217,20 @@ object LoggingTests extends Tests {
             expect(folderName + "/test.log") { h.asInstanceOf[FileHandler].filename }
             expect("net.lag") { log.name }
             expect(1024) { h.asInstanceOf[Handler].truncate_at }
+        }
+    }
+    
+    test("log config errors") {
+        // should throw an exception because of the unknown attribute
+        val TEST_DATA =
+            "filename=\"foobar.log\"\n" +
+            "level=\"debug\"\n" +
+            "style=\"html\"\n"
+        
+        val c = new Config
+        c.load(TEST_DATA)
+        expectThrow(classOf[LoggingException]) {
+            Logger.configure(c, false, false)
         }
     }
 }

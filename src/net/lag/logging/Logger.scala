@@ -20,6 +20,9 @@ case object DEBUG extends Level("DEBUG", 500)
 case object TRACE extends Level("TRACE", 400)
 
 
+class LoggingException(reason: String) extends Exception(reason)
+
+
 class Logger private(val name: String, private val wrapped: javalog.Logger) {
     
     def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
@@ -77,16 +80,33 @@ object Logger {
     private val loggersCache = new mutable.HashMap[String, Logger]
 
     private val root = get("")
-    root.setLevel(INFO)
     
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
-    clearHandlers
+
+    init
+
+
+    /**
+     * Reset logging to an initial state, where all logging is set at
+     * INFO level and goes to the console (stderr). Any existing log
+     * handlers are removed.
+     */
+    def init = {
+        clearHandlers
+        javaRoot.addHandler(new ConsoleHandler)
+        root.setLevel(INFO)
+    }
+
+    def clearHandlers = {
+        for (logger <- elements) {
+            for (handler <- logger.getHandlers) {
+                logger.removeHandler(handler)
+            }
+            logger.setLevel(javalog.Level.ALL)
+        }
+    }
     
-    // log to console at first
-    javaRoot.addHandler(new ConsoleHandler)
-
-
     def get(name: String): Logger = {
         loggersCache.get(name) match {
             case Some(logger) => logger
@@ -131,25 +151,35 @@ object Logger {
         loggers.elements
     }
     
-    def clearHandlers() = {
-        for (logger <- elements) {
-            for (handler <- logger.getHandlers) {
-                logger.removeHandler(handler)
-            }
-        }
-    }
-    
     /**
      * Create a Logger (or find an existing one) and configure it according
      * to a set of config keys.
      *
-     * @throws AttributeException if a config value can't be parsed correctly
+     * @param config a config block to parse
+     * @param validateOnly don't actually configure the Logger, just throw an
+     *     exception if the configuration is invalid
+     * @param allowNestedBlocks consider the configuration valid if it
+     *     contains nested config blocks, which are normally invalid
+     *
+     * @throws LoggingException if a config value can't be parsed correctly
      *     (some settings can only be one of a small possible set of values)
      */
-    def configure(config: AttributeMap): Logger = {
+    def configure(config: AttributeMap, validateOnly: Boolean, allowNestedBlocks: Boolean): Logger = {
+        // make sure no other screwy attributes are in this AttributeMap
+        val allowed = List("node", "console", "filename", "roll", "utc", "truncate", "truncate_stack_traces", "level", "use_parents")
+        var forbidden = config.keys.filter(x => !(allowed contains x)).toList
+        if (allowNestedBlocks) {
+            forbidden = forbidden.filter(x => config.getAttributes(x).isDefined)
+        }
+        if (forbidden.length > 0) {
+            throw new LoggingException("Unknown logging config attribute(s): " + forbidden.mkString(", "))
+        }
+        
         val logger = Logger.get(config.get("node", ""))
-        for (val handler <- logger.getHandlers) {
-            logger.removeHandler(handler)
+        if (! validateOnly) {
+            for (val handler <- logger.getHandlers) {
+                logger.removeHandler(handler)
+            }
         }
         
         var handlers: List[Handler] = Nil
@@ -172,7 +202,7 @@ object Logger {
                 case "thursday" => Weekly(Calendar.THURSDAY)
                 case "friday" => Weekly(Calendar.FRIDAY)
                 case "saturday" => Weekly(Calendar.SATURDAY)
-                case x => throw new AttributesException("Unknown logfile rolling policy: " + x)
+                case x => throw new LoggingException("Unknown logfile rolling policy: " + x)
             }
             handlers = new FileHandler(filename, policy) :: handlers
         }
@@ -181,16 +211,24 @@ object Logger {
             handler.use_utc = config.getBool("utc", false)
             handler.truncate_at = config.getInt("truncate", 0)
             handler.truncate_stack_traces_at = config.getInt("truncate_stack_traces", 30)
-            logger.addHandler(handler)
+            if (! validateOnly) {
+                logger.addHandler(handler)
+            }
         }
         
         val levelName = config.get("level", "warning").toUpperCase
         levelsMap.get(levelName) match {
-            case Some(level) => logger.setLevel(level)
-            case None => throw new AttributesException("Unknown log level: " + levelName)
+            case Some(level) => {
+                if (! validateOnly) {
+                    logger.setLevel(level)
+                }
+            }
+            case None => throw new LoggingException("Unknown log level: " + levelName)
         }
-        
-        logger.setUseParentHandlers(config.getBool("use_parents", true))
+
+        if (! validateOnly) {
+            logger.setUseParentHandlers(config.getBool("use_parents", true))
+        }
         
         logger
     }
