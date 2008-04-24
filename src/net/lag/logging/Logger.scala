@@ -69,6 +69,11 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     def debug(thrown: Throwable, msg: String, items: Any*) = log(DEBUG, thrown, msg, items)
     def trace(msg: String, items: Any*) = log(TRACE, msg, items: _*)
     def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items)
+    
+    override def toString = {
+        StringUtils.format("<%s name='%s' level=%s handlers=%s use_parent=%s>",
+                           getClass.getName, name, getLevel(), getHandlers().toList.mkString("[", ", ", "]"), if (getUseParentHandlers()) "true" else "false")
+    }
 }
 
 
@@ -84,7 +89,7 @@ object Logger {
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
 
-    init
+    reset
 
 
     /**
@@ -92,7 +97,7 @@ object Logger {
      * INFO level and goes to the console (stderr). Any existing log
      * handlers are removed.
      */
-    def init = {
+    def reset = {
         clearHandlers
         javaRoot.addHandler(new ConsoleHandler)
         root.setLevel(INFO)
@@ -101,9 +106,12 @@ object Logger {
     def clearHandlers = {
         for (logger <- elements) {
             for (handler <- logger.getHandlers) {
+                try {
+                    handler.close()
+                } catch { case _ => () }
                 logger.removeHandler(handler)
             }
-            logger.setLevel(javalog.Level.ALL)
+            logger.setLevel(null)
         }
     }
     
@@ -169,7 +177,7 @@ object Logger {
         val allowed = List("node", "console", "filename", "roll", "utc", "truncate", "truncate_stack_traces", "level", "use_parents")
         var forbidden = config.keys.filter(x => !(allowed contains x)).toList
         if (allowNestedBlocks) {
-            forbidden = forbidden.filter(x => config.getAttributes(x).isDefined)
+            forbidden = forbidden.filter(x => !config.getAttributes(x).isDefined)
         }
         if (forbidden.length > 0) {
             throw new LoggingException("Unknown logging config attribute(s): " + forbidden.mkString(", "))
@@ -207,7 +215,22 @@ object Logger {
             handlers = new FileHandler(filename, policy) :: handlers
         }
         
+        /* if they didn't specify a level, use "null", which is a secret
+         * signal to javalog to use the parent logger's level. this is the
+         * usual desired behavior, but not really documented anywhere. sigh.
+         */
+        val level = config.get("level") match {
+            case Some(levelName) => {
+                levelsMap.get(levelName.toUpperCase) match {
+                    case Some(x) => x
+                    case None => throw new LoggingException("Unknown log level: " + levelName)
+                }
+            }
+            case None => null
+        }
+
         for (val handler <- handlers) {
+            handler.setLevel(level)
             handler.use_utc = config.getBool("utc", false)
             handler.truncate_at = config.getInt("truncate", 0)
             handler.truncate_stack_traces_at = config.getInt("truncate_stack_traces", 30)
@@ -215,19 +238,10 @@ object Logger {
                 logger.addHandler(handler)
             }
         }
-        
-        val levelName = config.get("level", "warning").toUpperCase
-        levelsMap.get(levelName) match {
-            case Some(level) => {
-                if (! validateOnly) {
-                    logger.setLevel(level)
-                }
-            }
-            case None => throw new LoggingException("Unknown log level: " + levelName)
-        }
 
         if (! validateOnly) {
             logger.setUseParentHandlers(config.getBool("use_parents", true))
+            logger.setLevel(level)
         }
         
         logger

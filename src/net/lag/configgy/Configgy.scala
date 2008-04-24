@@ -11,15 +11,14 @@ object Configgy {
     
     
     def configure(path: String, filename: String) = {
-        Logger.init
-        val log = Logger.get
+        Logger.reset
         
         _config = new Config
         try {
             _config.loadFile(path, filename)
         } catch {
             case e: Throwable => {
-                log.critical(e, "Failed to load config file '%s/%s'", path, filename)
+                Logger.get.critical(e, "Failed to load config file '%s/%s'", path, filename)
                 throw e
             }
         }
@@ -28,8 +27,7 @@ object Configgy {
     }
     
     def configureFromResource(name: String) = {
-        Logger.init
-        val log = Logger.get
+        Logger.reset
         
         _config = new Config
         try {
@@ -37,7 +35,7 @@ object Configgy {
             _config.loadFile(name)
         } catch {
             case e: Throwable => {
-                log.critical(e, "Failed to load config resource '%s'", name)
+                Logger.get.critical(e, "Failed to load config resource '%s'", name)
                 throw e
             }
         }
@@ -79,7 +77,7 @@ object Configgy {
         }
 
         def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
-            Logger.init
+            Logger.reset
             
             for (val logConfig <- replacement) {
                 Logger.configure(logConfig, false, true)

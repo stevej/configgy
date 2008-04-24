@@ -3,8 +3,9 @@ TO-DO
 =====
 
 - syslog-ng support
-- config for logging
 - optional buffer queue for the log?
+- auto-flush the logfiles? looks like they're not, currently.
+- document config for logging
 
 
 

@@ -3,6 +3,8 @@ package net.lag.logging
 import java.util.{logging => javalog}
 import scala.collection.mutable
 
+import net.lag.configgy.StringUtils
+
 
 abstract class Handler extends javalog.Handler {
     private var formatter = new Formatter
@@ -25,6 +27,11 @@ abstract class Handler extends javalog.Handler {
     def use_utc = getFormatter.asInstanceOf[Formatter].use_utc
     def use_utc_=(utc: Boolean) = getFormatter.asInstanceOf[Formatter].use_utc = utc
     def calendar = getFormatter.asInstanceOf[Formatter].calendar
+    
+    override def toString = {
+        StringUtils.format("<%s level=%s utc=%s truncate=%d truncate_stack=%d>",
+                           getClass.getName, getLevel, if (use_utc) "true" else "false", truncate_at, truncate_stack_traces_at)
+    }
 }
 
 

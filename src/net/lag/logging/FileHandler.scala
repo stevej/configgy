@@ -30,7 +30,9 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
     
     def close() = {
         flush()
-        stream.close()
+        try {
+            stream.close()
+        } catch { case _ => () }
     }
 
     private def openLog() = {
