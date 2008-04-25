@@ -1,14 +1,5 @@
 
-TO-DO
-=====
-
-- syslog-ng support
-- optional buffer queue for the log?
-- auto-flush the logfiles? looks like they're not, currently.
-- document config for logging
-
-
-
+========
 CONFIGGY
 ========
 
@@ -16,11 +7,11 @@ Configgy is a library for handling config files and logging for a scala
 daemon. The idea is that it should be simple and straightforward, allowing
 you to plug it in and get started quickly.
 
-(As of March 2008, only the config part is finished.)
+.. contents::
 
 
 Why?
-----
+====
 
 You would think config files would be a solved problem by now, but for some
 reason they're not. Java is still trying to shoehorn "property files" for
@@ -51,13 +42,63 @@ file format very much like what I've implemented here (but it was more
 complex and had a few major flaws). Other projects have created similar
 formats. So I think this is an idea whose time has come.
 
+Logging is tightly integrated with configuration, since config files are
+usually used to setup logging, and some sort of logging is usually required at
+the same time as a config file. So this library puts them together,
+using the simple config format to setup logging, too -- allowing most of the
+flexibility of java logging, but making it easy to do the common case of
+creating a single logfile with one debug level.
+
+
+Quick Start
+===========
+
+This is all you need to know to use the library::
+
+    import net.lag.configgy.Configgy
+    import net.lag.logging.Logger
+
+    // load our config file and configure logfiles:
+    Configgy.configure("/etc", "pingd.conf")
+    
+    // read hostname and port:
+    val config = Configgy.config
+    val hostname = config.get("hostname", "localhost")
+    val port = config.getInt("port", 3000)
+    
+    // log an error:
+    val log = Logger.get
+    log.error("Unable to listen on %s:%d!", hostname, port)
+    
+    // or an exception:
+    try {
+        ...
+    } catch {
+        case e: IOException => log.error(e, "IOException while doodling")
+    }
+
+The following config file will setup a logfile at debug level, that rolls
+every night, and also sets a few simple config values::
+
+    <log>
+        filename = "/var/log/pingd.log"
+        roll = "daily"
+        level = "DEBUG"
+    </log>
+    
+    hostname = "pingd.example.com"
+    port = 3000
+
+The rest of this README just describes the config file format and how to
+use the library in more detail.
+
 
 Config Files
-------------
+============
 
-The config file format is simple and clean. It has a few advanced features,
-but limits itself to representing a nested structure of key/value pairs.
-It is always in UTF-8.
+The config file format is simple and clean. It borrows from XML, but isn't
+XML. It has a few advanced features, but limits itself to representing a
+nested structure of key/value pairs. It is always in UTF-8.
 
 Values are set like so::
 
@@ -78,7 +119,7 @@ optional equal sign -- whatever makes you happy)::
     use_root_privs off
     drink_milk = false
 
-String lists are just strings enclosed in brackets::
+String lists are just strings enclosed in brackets, separated by commas::
 
     states = ["California", "Tennessee", "Idaho"]
 
@@ -139,10 +180,72 @@ The pingd block will use its own value of "timeout" (30), but will inherit
 
 Usage from within scala
 -----------------------
-FIXME
+
+You can build the scaladocs with the ant rule::
+
+    $ ant docs
+
+The main interface is ``Configgy``, which can be used to load a config file
+and configure logging. The loaded config object is of type ``Config`` which is
+just an ``AttributeMap`` with methods added for handling subscriptions.
+
+Usually you will just want to set or get config values.
+
+Getting values can return an Option, or (if you provide a default value), a
+direct String (or Int, or Boolean, etc)::
+
+    scala> config("name")
+    res1: Option[String] = Some(Bender)
+
+    scala> config("name", "Frank")
+    res2: String = Bender
+
+    scala> config.getInt("age", 16)   
+    res3: Int = 23
+
+Setting values is similar::
+
+    scala> config("name") = "Bender"
+    scala> config("age") = 23
+
+To access a nested attribute, you can either use a dotted key like::
+
+    scala> config.getInt("pingd.port")
+    res10: Option[Int] = Some(3000)
+
+Or you can access the intermediate ``AttributesMap`` object::
+
+    scala> config.getAttributes("pingd")
+    res1: Option[net.lag.configgy.AttributeMap] = Some({pingd: port="3000" })
+
+    scala> config.getAttributes("pingd").get.getInt("port")
+    res2: Option[Int] = Some(3000)
 
 
 Subscription API
 ----------------
+
+Subscribing to an ``AttributesMap`` causes the subscriber to get called on
+every change to that node. For monitored config nodes, changes happen in two
+phases: validate and commit.
+
+In validation, you can verify that the new settings for this config node are
+reasonable and consistent, and if not, you can throw an exception to reject
+the change.
+
+If all subscribers successfully validate a change, the commit method is called
+to notify subscribers that the change was successful. If any subscriber
+refuses to validate a change, the code that called ``set`` should be prepared
+to catch the validation exception.
+
+
+Logging
+=======
 FIXME
+
+
+Usage from within scala
+-----------------------
+FIXME
+
 
