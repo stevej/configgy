@@ -92,6 +92,16 @@ object Logger {
     reset
 
 
+    // convenience methods:
+    def FATAL = logging.FATAL
+    def CRITICAL = logging.CRITICAL
+    def ERROR = logging.ERROR
+    def WARNING = logging.WARNING
+    def INFO = logging.INFO
+    def DEBUG = logging.DEBUG
+    def TRACE = logging.TRACE
+
+
     /**
      * Reset logging to an initial state, where all logging is set at
      * INFO level and goes to the console (stderr). Any existing log
