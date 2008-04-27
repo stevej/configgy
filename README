@@ -89,12 +89,15 @@ every night, and also sets a few simple config values::
     hostname = "pingd.example.com"
     port = 3000
 
-The rest of this README just describes the config file format and how to
-use the library in more detail.
+The rest of this README just describes the config file format, the logging
+options, and how to use the library in more detail.
 
+
+Basic Use
+=========
 
 Config Files
-============
+------------
 
 The config file format is simple and clean. It borrows from XML, but isn't
 XML. It has a few advanced features, but limits itself to representing a
@@ -137,11 +140,82 @@ effect could have been done with::
     pingd.timeout = 30
 
 
+Logging
+-------
+
+Logging is configured in a special ``<log>`` block. The main logging options
+are described below.
+
+``filename``
+    the file to write log entries into (optional)
+    
+``level``
+    the lowest severity log entry that should be written to the logfile
+    (defaults to ``INFO``) (described below)
+
+``console``
+    ``true`` (``on``) if logs should be written to the stderr console
+
+``roll``
+    when the logfile should be rolled (described below)
+    
+Logging severities are:
+
+=============  ================
+Severity       Description
+=============  ================
+**FATAL**      the server is about to exit
+**CRITICAL**   something happened that is so bad that someone should probably
+               be paged
+**ERROR**      an error occurred that may be limited in scope, but was
+               user-visible
+**WARNING**    a coder may want to be notified, but the error was probably not
+               user-visible
+**INFO**       normal informational logging
+**DEBUG**      coder-level debugging information
+**TRACE**      intensive debugging information
+=============  ================
+
+Logfile rolling policies are:
+
+===========  =================
+Name         Description
+===========  =================
+**never**    always use the same logfile
+**hourly**   roll to a new logfile at the top of every hour
+**daily**    roll to a new logfile at midnight every night
+**sunday**   roll to a new logfile at midnight between saturday and sunday,
+             once a week
+===========  =================
+
+For weekly logfile rolling, you may use any day of the week ("monday",
+"tuesday", etc), not just "sunday".
+
+When a logfile is rolled, the current logfile is renamed to have the date (and
+hour, if rolling hourly) attached, and a new one is started. So, for example,
+``test.log`` may become ``test-20080425.log``, and ``test.log`` will be
+reopened as a new file.
+
+So, for example::
+
+    <log>
+        filename = "test.log"
+        level = "warning"
+        roll = "tuesday"
+    </log>
+
+creates a logfile ``test.log`` that captures log entries only at warning, error, critical, or fatal levels. It's rolled once a week, at midnight on Tuesday morning.
+
+
 Advanced Features
------------------
+=================
 
 There are a few features you may not use right away, but you'll usually
 start wanting after the code matures a bit.
+
+
+Config Files
+------------
 
 Previously-set config values can be included in new ones by using variable
 substitution, with shell syntax. This also pulls in values from the
@@ -178,8 +252,13 @@ The pingd block will use its own value of "timeout" (30), but will inherit
 "chroot" from daemon-base. That is, "pingd.chroot" will be "/opt/magic".
 
 
+Logging
+-------
+FIXME
+
+
 Usage from within scala
------------------------
+=======================
 
 You can build the scaladocs with the ant rule::
 
@@ -188,6 +267,10 @@ You can build the scaladocs with the ant rule::
 The main interface is ``Configgy``, which can be used to load a config file
 and configure logging. The loaded config object is of type ``Config`` which is
 just an ``AttributeMap`` with methods added for handling subscriptions.
+
+
+Basic Config
+------------
 
 Usually you will just want to set or get config values.
 
@@ -240,12 +323,7 @@ to catch the validation exception.
 
 
 Logging
-=======
-FIXME
-
-
-Usage from within scala
------------------------
+-------
 FIXME
 
 

@@ -51,7 +51,7 @@ trait Subscriber {
  * Key returned by a call to <code>AttributeMap.subscribe</code> which may
  * be used to unsubscribe from config change events.
  */
-class SubscriptionKey private[configgy](val config: Config, protected[configgy] val id: Int) {
+class SubscriptionKey private[configgy](val config: Config, private[configgy] val id: Int) {
     /**
      * Remove the subscription referenced by this key. After unsubscribing,
      * no more validate/commit events will be sent to this subscriber.
