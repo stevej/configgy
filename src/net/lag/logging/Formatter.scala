@@ -62,8 +62,15 @@ class Formatter extends javalog.Formatter {
     override def format(record: javalog.LogRecord): String = {
         val level = record.getLevel match {
             case Level(name, _) => name.substring(0, 3)
-            case _ => "???"
+            case x: javalog.Level => {
+                // if it maps to one of our levels, use our name.
+                Logger.levelsMap.get(x.intValue) match {
+                    case None => StringUtils.format("%03d", x.intValue)
+                    case Some(level) => level.name.substring(0, 3)
+                }
+            }
         }
+        
         val name = record.getLoggerName match {
             case "" => "(root)"
             case n => {

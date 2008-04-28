@@ -9,7 +9,8 @@ import net.lag.configgy.{AttributesException, AttributeMap, StringUtils}
 
 // replace java's ridiculous log levels with the standard ones.
 sealed case class Level(name: String, value: Int) extends javalog.Level(name, value) {
-    Logger.levelsMap(name) = this
+    Logger.levelNamesMap(name) = this
+    Logger.levelsMap(value) = this
 }
 case object FATAL extends Level("FATAL", 1000)
 case object CRITICAL extends Level("CRITICAL", 970)
@@ -56,19 +57,19 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     
     // convenience methods:
     def fatal(msg: String, items: Any*) = log(FATAL, msg, items: _*)
-    def fatal(thrown: Throwable, msg: String, items: Any*) = log(FATAL, thrown, msg, items)
+    def fatal(thrown: Throwable, msg: String, items: Any*) = log(FATAL, thrown, msg, items: _*)
     def critical(msg: String, items: Any*) = log(CRITICAL, msg, items: _*)
-    def critical(thrown: Throwable, msg: String, items: Any*) = log(CRITICAL, thrown, msg, items)
+    def critical(thrown: Throwable, msg: String, items: Any*) = log(CRITICAL, thrown, msg, items: _*)
     def error(msg: String, items: Any*) = log(ERROR, msg, items: _*)
-    def error(thrown: Throwable, msg: String, items: Any*) = log(ERROR, thrown, msg, items)
+    def error(thrown: Throwable, msg: String, items: Any*) = log(ERROR, thrown, msg, items: _*)
     def warning(msg: String, items: Any*) = log(WARNING, msg, items: _*)
-    def warning(thrown: Throwable, msg: String, items: Any*) = log(WARNING, thrown, msg, items)
+    def warning(thrown: Throwable, msg: String, items: Any*) = log(WARNING, thrown, msg, items: _*)
     def info(msg: String, items: Any*) = log(INFO, msg, items: _*)
-    def info(thrown: Throwable, msg: String, items: Any*) = log(INFO, thrown, msg, items)
+    def info(thrown: Throwable, msg: String, items: Any*) = log(INFO, thrown, msg, items: _*)
     def debug(msg: String, items: Any*) = log(DEBUG, msg, items: _*)
-    def debug(thrown: Throwable, msg: String, items: Any*) = log(DEBUG, thrown, msg, items)
+    def debug(thrown: Throwable, msg: String, items: Any*) = log(DEBUG, thrown, msg, items: _*)
     def trace(msg: String, items: Any*) = log(TRACE, msg, items: _*)
-    def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items)
+    def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items: _*)
     
     override def toString = {
         StringUtils.format("<%s name='%s' level=%s handlers=%s use_parent=%s>",
@@ -78,8 +79,8 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
 
 
 object Logger {
-    
-    private[logging] val levelsMap = new mutable.HashMap[String, Level]
+    private[logging] val levelNamesMap = new mutable.HashMap[String, Level]
+    private[logging] val levelsMap = new mutable.HashMap[Int, Level]
     
     // cache scala Logger objects per name
     private val loggersCache = new mutable.HashMap[String, Logger]
@@ -231,7 +232,7 @@ object Logger {
          */
         val level = config.get("level") match {
             case Some(levelName) => {
-                levelsMap.get(levelName.toUpperCase) match {
+                levelNamesMap.get(levelName.toUpperCase) match {
                     case Some(x) => x
                     case None => throw new LoggingException("Unknown log level: " + levelName)
                 }
