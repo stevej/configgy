@@ -118,4 +118,21 @@ object StringUtils {
             ch.toString
         })
     }
+    
+    /**
+     * Turn an Array[Byte] into a string of hex digits.
+     */
+    def hexlify(data: Array[Byte], off: Int, len: Int): String = {
+        val out = new StringBuffer
+        for (i <- off until off + len) {
+            val s = data(i).toInt.toHexString
+            if (s.length < 2) {
+                out append '0'
+            }
+            out append s
+        }
+        out.toString
+    }
+    
+    def hexlify(data: Array[Byte]): String = hexlify(data, 0, data.length)
 }

@@ -20,4 +20,9 @@ object StringUtilsTests extends Tests {
         expect("\\backslash") { StringUtils.unquoteC("\\\\backslash") }
         expect("real\\$dollar") { StringUtils.unquoteC("real\\$dollar") }
     }
+    
+    test("hexlify") {
+        expect("656c6c") { StringUtils.hexlify("hello".getBytes, 1, 3) }
+        expect("68656c6c6f") { StringUtils.hexlify("hello".getBytes) }
+    }
 }
