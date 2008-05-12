@@ -1,13 +1,11 @@
 package net.lag.configgy
 
-import java.util.regex.Pattern
-
 import scala.collection._
 import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.lexical.Lexical
 import scala.util.parsing.input.{CharArrayReader, Reader}
-import scala.util.parsing.input.CharArrayReader.EofCh
 import scala.util.parsing.syntax.Tokens
+import net.lag.ConfiggyExtensions._
 
 
 /**
@@ -46,7 +44,7 @@ private[configgy] class ConfigLexer extends Lexical with Tokens {
     }
     
     case class QuotedString(chars: String) extends Token {
-        override def toString = "QuotedString(\"" + StringUtils.quoteC(chars) + "\")"
+        override def toString = "QuotedString(\"" + chars.quoteC + "\")"
     }
     
     case class Delim(chars: String) extends Token {
@@ -106,11 +104,11 @@ private[configgy] class ConfigLexer extends Lexical with Tokens {
     
     def quotedString = '"' ~> rep(chrExcept('\\', '"') | (elem('\\') ~ chrExcept('u', 'x')) |
         (elem('\\') ~ elem('\n')) | (elem('\\') ~ elem('u') ~ repN(4, hexDigit)) |
-        (elem('\\') ~ elem('x') ~ repN(2, hexDigit))) <~ '"' ^^ { x: Any => new QuotedString(StringUtils.unquoteC(pack(x))) }
+        (elem('\\') ~ elem('x') ~ repN(2, hexDigit))) <~ '"' ^^ { x: Any => new QuotedString(pack(x).unquoteC) }
     
     def delim = (str("[") | str("]") | str(",")) ^^ { case x => new Delim(x) }
     
-    def fini = EofCh ^^ { case _ => EOF }
+    def fini = CharArrayReader.EofCh ^^ { case _ => EOF }
     
     // for unit tests: scan a string and return a list of Tokens
     def scan(s: String): List[Token] = {

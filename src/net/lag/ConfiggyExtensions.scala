@@ -1,18 +1,16 @@
-package net.lag.configgy
+package net.lag
 
-import java.util.regex._
+import scala.util.matching.Regex
 
 
-/**
- * Helpful utility functions for dealing with strings.
- */
-object StringUtils {
+final class ConfiggyString(wrapped: String) {
+    import ConfiggyExtensions._
+    
     /**
      * Scala does not yet (Dec 2007) support java's String.format natively.
      * Fake it by building the Object[] manually for a handful of params.
      */
-    def format(s: String, items: Any*) = String.format(s, items.toArray.asInstanceOf[Array[Object]])
-
+    def format(items: Any*): String = String.format(wrapped, items.toArray.asInstanceOf[Array[Object]])
     
     /**
      * For every section of a string that matches a regular expression, call
@@ -23,7 +21,7 @@ object StringUtils {
      *
      * <p> For example, this call:
      *
-     * <p><code> patternSub(Pattern.compile("h."), "ohio", m => "n") </code>
+     * <p><code> "ohio".regexSub("""h.""".r, m => "n") </code>
      *
      * <p> will return the string <code>"ono"</code>.
      *
@@ -31,34 +29,31 @@ object StringUtils {
      * will obey all the normal java rules (the matches will not overlap,
      * etc).
      *
-     * @param p the regex pattern to replace
-     * @param s the string to perform replacement on
-     * @param replace a function that takes Matcher objects and returns a
-     *     string to substitute
+     * @param re the regex pattern to replace
+     * @param replace a function that takes Regex.MatchData objects and
+     *     returns a string to substitute
      * @return the resulting string with replacements made
      */
-    def patternSub(p: Pattern, s: String, replace: (Matcher => String)) = {
+    def regexSub(re: Regex, replace: (Regex.MatchData => String)): String = {
         var offset = 0
         var out = new StringBuilder
-        val m = p.matcher(s)
         
-        while (m.find()) {
+        for (val m <- re.findAllIn(wrapped).matchData) {
             if (m.start > offset) {
-                out.append(s.substring(offset, m.start))
+                out.append(wrapped.substring(offset, m.start))
             }
-        
+
             out.append(replace(m))
             offset = m.end
         }
-    
-        if (offset < s.length) {
-            out.append(s.substring(offset))
+
+        if (offset < wrapped.length) {
+            out.append(wrapped.substring(offset))
         }
         out.toString
     }
     
-    
-    private val QUOTE_RE = Pattern.compile("[\u0000-\u001f\u007f-\uffff\\\\\"]")
+    private val QUOTE_RE = "[\u0000-\u001f\u007f-\uffff\\\\\"]".r
 
     /**
      * Quote a string so that unprintable chars (in ASCII) are represented by
@@ -68,12 +63,11 @@ object StringUtils {
      * <code>"\xHH"</code> or <code>"\\uHHHH"</code> expressions, depending on
      * their range. Embedded backslashes and double-quotes are also quoted.
      *
-     * @param s the string to quote
      * @return a quoted string, suitable for ASCII display
      */
-    def quoteC(s: String) = {
-        patternSub(QUOTE_RE, s, m => {
-            m.group.charAt(0) match {
+    def quoteC: String = {
+        regexSub(QUOTE_RE, m => {
+            m.matched.charAt(0) match {
                 case '\r' => "\\r"
                 case '\n' => "\\n"
                 case '\t' => "\\t"
@@ -81,35 +75,33 @@ object StringUtils {
                 case '\\' => "\\\\"
                 case c => {
                     if (c <= 255) {
-                        format("\\x%02x", c.asInstanceOf[Int])
+                        "\\x%02x".format(c.asInstanceOf[Int])
                     } else {
-                        format("\\u%04x", c.asInstanceOf[Int])
+                        "\\u%04x" format c.asInstanceOf[Int]
                     }
                 }
             }
         })
     }
-
-
+    
     // we intentionally don't unquote "\$" here, so it can be used to escape interpolation later.
-    private val UNQUOTE_RE = Pattern.compile("\\\\(u[\\dA-Fa-f]{4}|x[\\dA-Fa-f]{2}|[rnt\"\\\\])")
+    private val UNQUOTE_RE = "\\\\(u[\\dA-Fa-f]{4}|x[\\dA-Fa-f]{2}|[rnt\"\\\\])".r
 
     /**
      * Unquote an ASCII string that has been quoted in a style like
-     * {@link #quoteC(String)} and convert it into a standard unicode string.
+     * {@link #quoteC} and convert it into a standard unicode string.
      * <code>"\\uHHHH"</code> and <code>"\xHH"</code> expressions are unpacked
      * into unicode characters, as well as <code>"\r"</code>, <code>"\n"<code>,
      * <code>"\t"</code>, <code>"\\"<code>, and <code>'\"'</code>.
      *
-     * @param s the ASCII string to unquote
      * @return an unquoted unicode string
      */
-    def unquoteC(s: String) = {
-        patternSub(UNQUOTE_RE, s, m => {
-            val ch = m.group(1).charAt(0) match {
+    def unquoteC = {
+        regexSub(UNQUOTE_RE, m => {
+            val ch = m.group(0).charAt(0) match {
                 // holy crap! this is terrible:
-                case 'u' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
-                case 'x' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
+                case 'u' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
+                case 'x' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
                 case 'r' => '\r'
                 case 'n' => '\n'
                 case 't' => '\t'
@@ -118,14 +110,17 @@ object StringUtils {
             ch.toString
         })
     }
-    
+}
+
+
+final class ConfiggyByteArray(wrapped: Array[Byte]) {
     /**
      * Turn an Array[Byte] into a string of hex digits.
      */
-    def hexlify(data: Array[Byte], off: Int, len: Int): String = {
+    def hexlify: String = {
         val out = new StringBuffer
-        for (i <- off until off + len) {
-            val s = data(i).toInt.toHexString
+        for (val b <- wrapped) {
+            val s = b.toInt.toHexString
             if (s.length < 2) {
                 out append '0'
             }
@@ -134,5 +129,10 @@ object StringUtils {
         out.toString
     }
     
-    def hexlify(data: Array[Byte]): String = hexlify(data, 0, data.length)
+}
+
+
+object ConfiggyExtensions {
+    implicit def stringToConfiggyString(s: String): ConfiggyString = new ConfiggyString(s)
+    implicit def byteArrayToConfiggyByteArray(b: Array[Byte]): ConfiggyByteArray = new ConfiggyByteArray(b)
 }

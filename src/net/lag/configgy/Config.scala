@@ -3,6 +3,7 @@ package net.lag.configgy
 import java.io.File
 import scala.collection.{Map, Set}
 import scala.collection.{immutable, mutable}
+import net.lag.ConfiggyExtensions._
 
 
 private abstract class Phase
@@ -26,7 +27,7 @@ private class SubscriptionNode {
     }
     
     override def toString = {
-        val out = new StringBuilder(StringUtils.format("%d", subscribers.size))
+        val out = new StringBuilder("%d" format subscribers.size)
         if (map.size > 0) {
             out.append(" { ")
             for (val key <- map.keys) {

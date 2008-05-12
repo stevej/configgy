@@ -3,21 +3,20 @@ package net.lag.logging
 import java.text.SimpleDateFormat
 import java.util.{Date, GregorianCalendar, TimeZone, logging => javalog}
 import scala.collection.mutable
-
-import net.lag.configgy.StringUtils
+import net.lag.ConfiggyExtensions._
 
 
 object Formatter {
     // FIXME: might be nice to unmangle some scala names here.
     private[logging] def formatStackTrace(t: Throwable, limit: Int): mutable.ArrayBuffer[String] = {
         var out = new mutable.ArrayBuffer[String]
-        out ++= (for (elem <- t.getStackTrace) yield StringUtils.format("    at %s", elem.toString))
+        out ++= (for (elem <- t.getStackTrace) yield "    at %s".format(elem.toString))
         if (out.length > limit) {
             out = new mutable.ArrayBuffer[String] ++ out.take(limit)
             out += "    (...more...)"
         }
         if (t.getCause != null) {
-            out += StringUtils.format("Caused by %s", t.getCause.toString)
+            out += "Caused by %s".format(t.getCause.toString)
             out ++= formatStackTrace(t.getCause, limit)
         }
         out
@@ -65,7 +64,7 @@ class Formatter extends javalog.Formatter {
             case x: javalog.Level => {
                 // if it maps to one of our levels, use our name.
                 Logger.levelsMap.get(x.intValue) match {
-                    case None => StringUtils.format("%03d", x.intValue)
+                    case None => "%03d".format(x.intValue)
                     case Some(level) => level.name.substring(0, 3)
                 }
             }
@@ -99,7 +98,7 @@ class Formatter extends javalog.Formatter {
             lines += record.getThrown.toString
             lines ++= Formatter.formatStackTrace(record.getThrown, truncate_stack_traces_at)
         }
-        val prefix = StringUtils.format("%s [%s] %s: ", level, DATE_FORMAT.format(new Date(record.getMillis)), name)
+        val prefix = "%s [%s] %s: ".format(level, DATE_FORMAT.format(new Date(record.getMillis)), name)
         lines.mkString(prefix, "\n" + prefix, "\n")
     }
 }

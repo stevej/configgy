@@ -12,7 +12,7 @@ object TestRunner {
     def main(args:Array[String]): Unit = {
         val results = new TestResult
 
-        val suite = new TestSuite(StringUtilsTests,
+        val suite = new TestSuite(ConfiggyExtensionsTests,
                                   ConfigLexerTests,
                                   AttributesTests,
                                   ConfigParserTests,

@@ -2,6 +2,7 @@ package net.lag.configgy
 
 import java.util.regex.Pattern
 import scala.collection.{mutable, Map}
+import net.lag.ConfiggyExtensions._
 
 
 class AttributesException(reason: String) extends Exception(reason)
@@ -34,7 +35,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             buffer ++= key
             buffer ++= "="
             buffer ++= (cells(key) match {
-                case StringCell(x) => "\"" + StringUtils.quoteC(x) + "\""
+                case StringCell(x) => "\"" + x.quoteC + "\""
                 case AttributesCell(x) => x.toString
                 case StringListCell(x) => x.mkString("[", ",", "]")
             })
@@ -238,7 +239,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     
     // substitute "$(...)" strings with looked-up vars
     // (and find "\$" and replace them with "$")
-    private val INTERPOLATE_RE = Pattern.compile("(?<!\\\\)\\$\\((\\w[\\w\\d\\._-]*)\\)|\\\\\\$")
+    private val INTERPOLATE_RE = """(?<!\\)\$\((\w[\w\d\._-]*)\)|\\\$""".r
     
     protected[configgy] def interpolate(s: String): String = {
         def lookup(key: String, path: List[AttributeMap]): String = {
@@ -251,14 +252,13 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
         
-        StringUtils.patternSub(INTERPOLATE_RE, s, m => {
-            val name = m.group(1)
-            if (m.group(0) == "\\$") {
+        s.regexSub(INTERPOLATE_RE, m => {
+            if (m.matched == "\\$") {
                 "$"
             } else if (config == null) {
-                lookup(m.group(1), List(this, EnvironmentAttributes))
+                lookup(m.group(0), List(this, EnvironmentAttributes))
             } else {
-                lookup(m.group(1), List(this, config, EnvironmentAttributes))
+                lookup(m.group(0), List(this, config, EnvironmentAttributes))
             }
         })
     }

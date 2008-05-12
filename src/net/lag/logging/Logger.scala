@@ -3,8 +3,8 @@ package net.lag.logging
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date, logging => javalog}
 import scala.collection.mutable
-
-import net.lag.configgy.{AttributesException, AttributeMap, StringUtils}
+import net.lag.ConfiggyExtensions._
+import net.lag.configgy.{AttributesException, AttributeMap}
 
 
 // replace java's ridiculous log levels with the standard ones.
@@ -72,8 +72,8 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items: _*)
     
     override def toString = {
-        StringUtils.format("<%s name='%s' level=%s handlers=%s use_parent=%s>",
-                           getClass.getName, name, getLevel(), getHandlers().toList.mkString("[", ", ", "]"), if (getUseParentHandlers()) "true" else "false")
+        "<%s name='%s' level=%s handlers=%s use_parent=%s>".format(getClass.getName, name, getLevel(),
+            getHandlers().toList.mkString("[", ", ", "]"), if (getUseParentHandlers()) "true" else "false")
     }
 }
 
