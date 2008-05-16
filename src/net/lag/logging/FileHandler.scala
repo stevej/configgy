@@ -16,18 +16,18 @@ case class Weekly(dayOfWeek: Int) extends Policy
  * A log handler that writes log entries into a file, and rolls this file
  * at a requested interval (hourly, daily, or weekly).
  */
-class FileHandler(val filename: String, val policy: Policy) extends Handler {
+class FileHandler(val filename: String, val policy: Policy, formatter: Formatter) extends Handler(formatter) {
 
     private var stream: Writer = null
     private var openTime: Long = 0
     private var nextRollTime: Long = 0
     openLog()
-    
-    
+
+
     def flush() = {
         stream.flush()
     }
-    
+
     def close() = {
         flush()
         try {
@@ -40,7 +40,7 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
         openTime = System.currentTimeMillis
         nextRollTime = computeNextRollTime()
     }
-    
+
     /**
      * Compute the suffix for a rolled logfile, based on the roll policy.
      */
@@ -85,9 +85,9 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
         }
         next.getTimeInMillis
     }
-    
+
     def computeNextRollTime(): Long = computeNextRollTime(System.currentTimeMillis)
-    
+
     private def roll = {
         stream.close()
         val n = filename.lastIndexOf('.')
@@ -99,7 +99,7 @@ class FileHandler(val filename: String, val policy: Policy) extends Handler {
         new File(filename).renameTo(new File(newFilename))
         openLog()
     }
-    
+
     def publish(record: javalog.LogRecord) = synchronized {
         try {
             if (System.currentTimeMillis > nextRollTime) {

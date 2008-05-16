@@ -36,17 +36,15 @@ object Formatter {
  * last significant segment of the package name (ie "com.lag.julius"),
  * although packages can override this.
  */
-class Formatter extends javalog.Formatter {
-    
+abstract class Formatter extends javalog.Formatter {
+
     var truncate_at: Int = 0
     var truncate_stack_traces_at: Int = 30
     private var _use_utc = false
     var calendar = new GregorianCalendar
-    
-    private val DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
-    
+
     def use_utc = _use_utc
-    
+
     def use_utc_=(utc: Boolean) = {
         _use_utc = utc
         if (utc) {
@@ -55,21 +53,19 @@ class Formatter extends javalog.Formatter {
         } else {
             calendar = new GregorianCalendar
         }
-        DATE_FORMAT.setCalendar(calendar)
+        dateFormat.setCalendar(calendar)
     }
-    
+
+    // implement me!
+    def dateFormat: SimpleDateFormat
+
+    // implement me!
+    def lineTerminator: String
+
+    // implement me!
+    def formatPrefix(level: javalog.Level, date: String, name: String): String
+
     override def format(record: javalog.LogRecord): String = {
-        val level = record.getLevel match {
-            case Level(name, _) => name.substring(0, 3)
-            case x: javalog.Level => {
-                // if it maps to one of our levels, use our name.
-                Logger.levelsMap.get(x.intValue) match {
-                    case None => "%03d".format(x.intValue)
-                    case Some(level) => level.name.substring(0, 3)
-                }
-            }
-        }
-        
         val name = record.getLoggerName match {
             case "" => "(root)"
             case n => {
@@ -81,7 +77,7 @@ class Formatter extends javalog.Formatter {
                 }
             }
         }
-        
+
         var message = record.getMessage
         if (record.getParameters != null) {
             message = String.format(message, record.getParameters)
@@ -98,7 +94,30 @@ class Formatter extends javalog.Formatter {
             lines += record.getThrown.toString
             lines ++= Formatter.formatStackTrace(record.getThrown, truncate_stack_traces_at)
         }
-        val prefix = "%s [%s] %s: ".format(level, DATE_FORMAT.format(new Date(record.getMillis)), name)
-        lines.mkString(prefix, "\n" + prefix, "\n")
+        val prefix = formatPrefix(record.getLevel, dateFormat.format(new Date(record.getMillis)), name)
+        lines.mkString(prefix, lineTerminator + prefix, lineTerminator)
+    }
+}
+
+
+class FileFormatter extends Formatter {
+    private val DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
+
+    override def dateFormat = DATE_FORMAT
+    override def lineTerminator = "\n"
+
+    override def formatPrefix(level: javalog.Level, date: String, name: String): String = {
+        val levelName = level match {
+            case Level(name, _) => name.substring(0, 3)
+            case x: javalog.Level => {
+                // if it maps to one of our levels, use our name.
+                Logger.levelsMap.get(x.intValue) match {
+                    case None => "%03d".format(x.intValue)
+                    case Some(level) => level.name.substring(0, 3)
+                }
+            }
+        }
+
+        "%s [%s] %s: ".format(levelName, date, name)
     }
 }

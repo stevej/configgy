@@ -25,9 +25,9 @@ class LoggingException(reason: String) extends Exception(reason)
 
 
 class Logger private(val name: String, private val wrapped: javalog.Logger) {
-    
+
     def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
-    
+
     def log(level: Level, thrown: Throwable, msg: String, items: Any*): Unit = {
         val myLevel = getLevel
         if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
@@ -40,7 +40,7 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
             wrapped.log(record)
         }
     }
-    
+
     // wrapped methods:
     def addHandler(handler: javalog.Handler) = wrapped.addHandler(handler)
     def getFilter() = wrapped.getFilter()
@@ -54,7 +54,7 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     def setFilter(filter: javalog.Filter) = wrapped.setFilter(filter)
     def setLevel(level: javalog.Level) = wrapped.setLevel(level)
     def setUseParentHandlers(use: Boolean) = wrapped.setUseParentHandlers(use)
-    
+
     // convenience methods:
     def fatal(msg: String, items: Any*) = log(FATAL, msg, items: _*)
     def fatal(thrown: Throwable, msg: String, items: Any*) = log(FATAL, thrown, msg, items: _*)
@@ -70,7 +70,7 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     def debug(thrown: Throwable, msg: String, items: Any*) = log(DEBUG, thrown, msg, items: _*)
     def trace(msg: String, items: Any*) = log(TRACE, msg, items: _*)
     def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items: _*)
-    
+
     override def toString = {
         "<%s name='%s' level=%s handlers=%s use_parent=%s>".format(getClass.getName, name, getLevel(),
             getHandlers().toList.mkString("[", ", ", "]"), if (getUseParentHandlers()) "true" else "false")
@@ -81,12 +81,12 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
 object Logger {
     private[logging] val levelNamesMap = new mutable.HashMap[String, Level]
     private[logging] val levelsMap = new mutable.HashMap[Int, Level]
-    
+
     // cache scala Logger objects per name
     private val loggersCache = new mutable.HashMap[String, Logger]
 
     private val root = get("")
-    
+
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
 
@@ -110,7 +110,7 @@ object Logger {
      */
     def reset = {
         clearHandlers
-        javaRoot.addHandler(new ConsoleHandler)
+        javaRoot.addHandler(new ConsoleHandler(new FileFormatter))
         root.setLevel(INFO)
     }
 
@@ -125,7 +125,7 @@ object Logger {
             logger.setLevel(null)
         }
     }
-    
+
     def get(name: String): Logger = {
         loggersCache.get(name) match {
             case Some(logger) => logger
@@ -145,7 +145,7 @@ object Logger {
             }
         }
     }
-    
+
     def get: Logger = {
         val className = new Throwable().getStackTrace()(1).getClassName
         if (className.endsWith("$")) {
@@ -154,7 +154,7 @@ object Logger {
             get(className)
         }
     }
-    
+
     /**
      * Iterate the Logger objects that have been created.
      */
@@ -169,7 +169,7 @@ object Logger {
         }
         loggers.elements
     }
-    
+
     /**
      * Create a Logger (or find an existing one) and configure it according
      * to a set of config keys.
@@ -193,20 +193,20 @@ object Logger {
         if (forbidden.length > 0) {
             throw new LoggingException("Unknown logging config attribute(s): " + forbidden.mkString(", "))
         }
-        
+
         val logger = Logger.get(config.get("node", ""))
         if (! validateOnly) {
             for (val handler <- logger.getHandlers) {
                 logger.removeHandler(handler)
             }
         }
-        
+
         var handlers: List[Handler] = Nil
 
         if (config.getBool("console", false)) {
-            handlers = new ConsoleHandler :: handlers
+            handlers = new ConsoleHandler(new FileFormatter) :: handlers
         }
-        
+
         // options for using a logfile
         for (val filename <- config.get("filename")) {
             // i bet there's an easier way to do this.
@@ -223,9 +223,9 @@ object Logger {
                 case "saturday" => Weekly(Calendar.SATURDAY)
                 case x => throw new LoggingException("Unknown logfile rolling policy: " + x)
             }
-            handlers = new FileHandler(filename, policy) :: handlers
+            handlers = new FileHandler(filename, policy, new FileFormatter) :: handlers
         }
-        
+
         /* if they didn't specify a level, use "null", which is a secret
          * signal to javalog to use the parent logger's level. this is the
          * usual desired behavior, but not really documented anywhere. sigh.
@@ -254,7 +254,7 @@ object Logger {
             logger.setUseParentHandlers(config.getBool("use_parents", true))
             logger.setLevel(level)
         }
-        
+
         logger
     }
 }
