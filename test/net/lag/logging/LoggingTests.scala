@@ -212,7 +212,7 @@ object LoggingTests extends Tests {
         val serverSocket = new DatagramSocket
         val serverPort = serverSocket.getLocalPort
 
-        val syslog = new TimeWarpingSyslogHandler(true, "localhost:" + serverPort)
+        var syslog = new TimeWarpingSyslogHandler(true, "localhost:" + serverPort)
         val log = Logger.get("net.lag.whiskey.Train")
         log.addHandler(syslog)
         log.setLevel(DEBUG)
@@ -231,8 +231,14 @@ object LoggingTests extends Tests {
         expect("<12>2008-03-28T22:53:16 raccoon.local whiskey: warning message!") { new String(p.getData, 0, p.getLength) }
         serverSocket.receive(p)
         expect("<15>2008-03-28T22:53:16 raccoon.local whiskey: and debug!") { new String(p.getData, 0, p.getLength) }
-    }
 
+        log.removeHandler(syslog)
+        syslog = new TimeWarpingSyslogHandler(false, "localhost:" + serverPort)
+        log.addHandler(syslog)
+        log.info("here's an info message with BSD time.")
+        serverSocket.receive(p)
+        expect("<14>Mar 28 22:53:16 raccoon.local whiskey: here's an info message with BSD time.") { new String(p.getData, 0, p.getLength) }
+    }
 
     test("log config") {
         withTempFolder {
