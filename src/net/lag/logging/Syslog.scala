@@ -55,10 +55,10 @@ class SyslogFormatter(useIsoDateFormat: Boolean) extends Formatter {
     private val OLD_SYSLOG_DATE_FORMAT = new SimpleDateFormat("MMM dd HH:mm:ss")
 
     // user may override:
-    def priority = Syslog.PRIORITY_USER
+    var priority = Syslog.PRIORITY_USER
 
     // user may override:
-    def hostname = InetAddress.getLocalHost().getHostName()
+    var hostname = InetAddress.getLocalHost().getHostName()
 
     override def dateFormat = if (useIsoDateFormat) ISO_DATE_FORMAT else OLD_SYSLOG_DATE_FORMAT
     override def lineTerminator = ""

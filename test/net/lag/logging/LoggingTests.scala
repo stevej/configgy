@@ -41,6 +41,8 @@ class TimeWarpingSyslogHandler(useIsoDateFormat: Boolean, server: String) extend
         record.setMillis(1206769996722L)
         super.publish(record)
     }
+    
+    getFormatter.asInstanceOf[SyslogFormatter].hostname = "raccoon.local"
 }
 
 
@@ -160,7 +162,7 @@ object LoggingTests extends Tests {
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:25)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:155)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:157)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                     "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:14)",
