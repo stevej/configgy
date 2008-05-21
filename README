@@ -59,7 +59,7 @@ This is all you need to know to use the library::
     import net.lag.logging.Logger
 
     // load our config file and configure logfiles:
-    Configgy.configure("/etc", "pingd.conf")
+    Configgy.configure("/etc/pingd.conf")
     
     // read hostname and port:
     val config = Configgy.config
@@ -83,7 +83,7 @@ every night, and also sets a few simple config values::
     <log>
         filename = "/var/log/pingd.log"
         roll = "daily"
-        level = "DEBUG"
+        level = "debug"
     </log>
     
     hostname = "pingd.example.com"

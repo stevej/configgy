@@ -1,5 +1,6 @@
 package net.lag.configgy
 
+import java.io.File
 import net.lag.logging.Logger
 
 
@@ -10,7 +11,7 @@ object Configgy {
     def config = _config
     
     
-    def configure(path: String, filename: String) = {
+    def configure(path: String, filename: String): Unit = {
         Logger.reset
         
         _config = new Config
@@ -24,6 +25,15 @@ object Configgy {
         }
         
         configLogging
+    }
+    
+    def configure(filename: String): Unit = {
+        val n = filename.lastIndexOf('/')
+        if (n < 0) {
+            configure(new File(".").getCanonicalPath, filename)
+        } else {
+            configure(filename.substring(0, n), filename.substring(n + 1))
+        }
     }
     
     def configureFromResource(name: String) = {

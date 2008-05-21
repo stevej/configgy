@@ -90,9 +90,6 @@ object Logger {
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
 
-    reset
-
-
     // convenience methods:
     def FATAL = logging.FATAL
     def CRITICAL = logging.CRITICAL
@@ -101,6 +98,16 @@ object Logger {
     def INFO = logging.INFO
     def DEBUG = logging.DEBUG
     def TRACE = logging.TRACE
+
+    // to force them to get loaded from class files:
+    root.setLevel(FATAL)
+    root.setLevel(CRITICAL)
+    root.setLevel(ERROR)
+    root.setLevel(WARNING)
+    root.setLevel(INFO)
+    root.setLevel(DEBUG)
+    root.setLevel(TRACE)
+    reset
 
 
     /**
