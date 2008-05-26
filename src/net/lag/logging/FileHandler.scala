@@ -106,6 +106,7 @@ class FileHandler(val filename: String, val policy: Policy, formatter: Formatter
                 roll
             }
             stream.write(getFormatter.format(record))
+            stream.flush
         } catch {
             case e => {
                 System.err.println(Formatter.formatStackTrace(e, 30).mkString("\n"))
