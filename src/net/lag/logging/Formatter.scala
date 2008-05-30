@@ -56,6 +56,13 @@ abstract class Formatter extends javalog.Formatter {
         dateFormat.setCalendar(calendar)
     }
 
+    def timeZone = calendar.getTimeZone.getDisplayName
+
+    def timeZone_=(name: String) = {
+        calendar = new GregorianCalendar(TimeZone.getTimeZone(name))
+        dateFormat.setCalendar(calendar)
+    }
+
     // implement me!
     def dateFormat: SimpleDateFormat
 

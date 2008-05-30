@@ -5,9 +5,9 @@ import scala.collection.mutable
 import net.lag.ConfiggyExtensions._
 
 
-abstract class Handler(formatter: Formatter) extends javalog.Handler {
+abstract class Handler(_formatter: Formatter) extends javalog.Handler {
 
-    setFormatter(formatter)
+    setFormatter(_formatter)
 
 
     def truncate_at = formatter.truncate_at
@@ -22,9 +22,10 @@ abstract class Handler(formatter: Formatter) extends javalog.Handler {
         formatter.truncate_stack_traces_at = n
     }
 
-    def use_utc = getFormatter.asInstanceOf[Formatter].use_utc
-    def use_utc_=(utc: Boolean) = getFormatter.asInstanceOf[Formatter].use_utc = utc
-    def calendar = getFormatter.asInstanceOf[Formatter].calendar
+    def use_utc = formatter.use_utc
+    def use_utc_=(utc: Boolean) = formatter.use_utc = utc
+    def calendar = formatter.calendar
+    def formatter = getFormatter.asInstanceOf[Formatter]
 
     override def toString = {
         "<%s level=%s utc=%s truncate=%d truncate_stack=%d>".format(getClass.getName, getLevel,
@@ -37,7 +38,7 @@ abstract class Handler(formatter: Formatter) extends javalog.Handler {
  * Mostly useful for unit tests: logging goes directly into a
  * string buffer.
  */
-class StringHandler(val formatter: Formatter) extends Handler(formatter) {
+class StringHandler(_formatter: Formatter) extends Handler(_formatter) {
     private var buffer = new StringBuilder()
 
     def publish(record: javalog.LogRecord) = {
@@ -55,7 +56,7 @@ class StringHandler(val formatter: Formatter) extends Handler(formatter) {
 /**
  * Log things to the console.
  */
-class ConsoleHandler(val formatter: Formatter) extends Handler(formatter) {
+class ConsoleHandler(_formatter: Formatter) extends Handler(_formatter) {
     def publish(record: javalog.LogRecord) = {
         System.err.print(getFormatter().format(record))
     }
