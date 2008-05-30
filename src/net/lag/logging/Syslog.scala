@@ -76,9 +76,9 @@ class SyslogFormatter(useIsoDateFormat: Boolean) extends Formatter {
 class SyslogHandler(useIsoDateFormat: Boolean, server: String) extends Handler(new SyslogFormatter(useIsoDateFormat)) {
     private val socket = new DatagramSocket
     private val dest: SocketAddress = server.split(":", 2).toList match {
-        case host :: port :: _ => new InetSocketAddress(host, port.toInt)
-        case host :: _ => new InetSocketAddress(host, Syslog.DEFAULT_PORT)
-        case Nil => null
+        case host :: port :: Nil => new InetSocketAddress(host, port.toInt)
+        case host :: Nil => new InetSocketAddress(host, Syslog.DEFAULT_PORT)
+        case _ => null
     }
 
     def flush() = { }
