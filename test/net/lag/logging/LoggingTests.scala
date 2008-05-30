@@ -29,6 +29,8 @@ object Crazy {
 
 
 class TimeWarpingStringHandler extends StringHandler(new FileFormatter) {
+    formatter.timeZone = "GMT-7"
+
     override def publish(record: javalog.LogRecord) = {
         record.setMillis(1206769996722L)
         super.publish(record)
@@ -37,16 +39,20 @@ class TimeWarpingStringHandler extends StringHandler(new FileFormatter) {
 
 
 class TimeWarpingSyslogHandler(useIsoDateFormat: Boolean, server: String) extends SyslogHandler(useIsoDateFormat, server) {
+    formatter.timeZone = "GMT-7"
+
     override def publish(record: javalog.LogRecord) = {
         record.setMillis(1206769996722L)
         super.publish(record)
     }
-    
+
     getFormatter.asInstanceOf[SyslogFormatter].hostname = "raccoon.local"
 }
 
 
 class ImmediatelyRollingFileHandler(filename: String, policy: Policy) extends FileHandler(filename, policy, new FileFormatter) {
+    formatter.timeZone = "GMT-7"
+
     override def computeNextRollTime(): Long = System.currentTimeMillis + 100
 
     override def publish(record: javalog.LogRecord) = {
@@ -162,7 +168,7 @@ object LoggingTests extends Tests {
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:25)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:157)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:163)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                     "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:14)",
