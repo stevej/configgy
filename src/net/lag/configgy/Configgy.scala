@@ -9,11 +9,11 @@ object Configgy {
     private val subscriber = new LoggingConfigSubscriber
 
     def config = _config
-    
-    
+
+
     def configure(path: String, filename: String): Unit = {
         Logger.reset
-        
+
         _config = new Config
         try {
             _config.loadFile(path, filename)
@@ -23,10 +23,10 @@ object Configgy {
                 throw e
             }
         }
-        
+
         configLogging
     }
-    
+
     def configure(filename: String): Unit = {
         val n = filename.lastIndexOf('/')
         if (n < 0) {
@@ -35,10 +35,10 @@ object Configgy {
             configure(filename.substring(0, n), filename.substring(n + 1))
         }
     }
-    
+
     def configureFromResource(name: String) = {
         Logger.reset
-        
+
         _config = new Config
         try {
             _config.importer = new ResourceImporter
@@ -49,13 +49,13 @@ object Configgy {
                 throw e
             }
         }
-        
+
         configLogging
     }
-    
+
     private def configLogging = {
         val log = Logger.get("")
-        
+
         try {
             val attr = _config.getAttributes("log")
             subscriber.commit(None, attr)
@@ -69,8 +69,8 @@ object Configgy {
             }
         }
     }
-    
-    
+
+
     private class LoggingConfigSubscriber extends Subscriber {
         @throws(classOf[ValidationException])
         def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
@@ -88,7 +88,7 @@ object Configgy {
 
         def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
             Logger.reset
-            
+
             for (val logConfig <- replacement) {
                 Logger.configure(logConfig, false, true)
                 for (val key <- logConfig.keys if logConfig.getAttributes(key).isDefined) {
