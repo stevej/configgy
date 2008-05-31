@@ -192,7 +192,10 @@ object Logger {
      */
     def configure(config: AttributeMap, validateOnly: Boolean, allowNestedBlocks: Boolean): Logger = {
         // make sure no other screwy attributes are in this AttributeMap
-        val allowed = List("node", "console", "filename", "roll", "utc", "truncate", "truncate_stack_traces", "level", "use_parents")
+        val allowed = List("node", "console", "filename", "roll", "utc",
+                           "truncate", "truncate_stack_traces", "level",
+                           "use_parents", "syslog_host", "syslog_server_name",
+                           "syslog_use_iso_date_format")
         var forbidden = config.keys.filter(x => !(allowed contains x)).toList
         if (allowNestedBlocks) {
             forbidden = forbidden.filter(x => !config.getAttributes(x).isDefined)
@@ -212,6 +215,15 @@ object Logger {
 
         if (config.getBool("console", false)) {
             handlers = new ConsoleHandler(new FileFormatter) :: handlers
+        }
+
+        for (val hostname <- config.get("syslog_host")) {
+            val useIsoDateFormat = config.getBool("syslog_use_iso_date_format", true)
+            val handler = new SyslogHandler(useIsoDateFormat, hostname)
+            for (val serverName <- config.get("syslog_server_name")) {
+                handler.serverName = serverName
+            }
+            handlers = handler :: handlers
         }
 
         // options for using a logfile

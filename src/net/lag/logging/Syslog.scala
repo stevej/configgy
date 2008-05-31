@@ -60,6 +60,18 @@ class SyslogFormatter(useIsoDateFormat: Boolean) extends Formatter {
     // user may override:
     var hostname = InetAddress.getLocalHost().getHostName()
 
+    private var _serverName: Option[String] = None
+    def serverName = _serverName match {
+        case None => ""
+        case Some(name) => name
+    }
+    def serverName_=(name: String) = {
+        _serverName = Some(name)
+    }
+    def clearServerName = {
+        _serverName = None
+    }
+
     override def dateFormat = if (useIsoDateFormat) ISO_DATE_FORMAT else OLD_SYSLOG_DATE_FORMAT
     override def lineTerminator = ""
 
@@ -68,7 +80,10 @@ class SyslogFormatter(useIsoDateFormat: Boolean) extends Formatter {
             case Level(name, x) => Syslog.severityForLogLevel(x)
             case x: javalog.Level => Syslog.severityForLogLevel(x.intValue)
         }
-        "<%d>%s %s %s: ".format(priority | syslogLevel, date, hostname, name)
+        _serverName match {
+            case None => "<%d>%s %s %s: ".format(priority | syslogLevel, date, hostname, name)
+            case Some(serverName) => "<%d>%s %s [%s] %s: ".format(priority | syslogLevel, date, hostname, serverName, name)
+        }
     }
 }
 
@@ -83,6 +98,19 @@ class SyslogHandler(useIsoDateFormat: Boolean, server: String) extends Handler(n
 
     def flush() = { }
     def close() = { }
+
+    override def formatter = getFormatter.asInstanceOf[SyslogFormatter]
+
+    def priority = formatter.priority
+    def priority_=(priority: Int) = {
+        formatter.priority = priority
+    }
+
+    def serverName = formatter.serverName
+    def serverName_=(name: String) = {
+        formatter.serverName = name
+    }
+    def clearServerName = formatter.clearServerName
 
     def publish(record: javalog.LogRecord) = synchronized {
         try {

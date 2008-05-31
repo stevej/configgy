@@ -227,7 +227,9 @@ object LoggingTests extends Tests {
 
         log.fatal("fatal message!")
         log.error("error message!")
+        syslog.serverName = "pingd"
         log.warning("warning message!")
+        syslog.clearServerName
         log.debug("and debug!")
 
         val p = new DatagramPacket(new Array[Byte](1024), 1024)
@@ -236,7 +238,7 @@ object LoggingTests extends Tests {
         serverSocket.receive(p)
         expect("<11>2008-03-28T22:53:16 raccoon.local whiskey: error message!") { new String(p.getData, 0, p.getLength) }
         serverSocket.receive(p)
-        expect("<12>2008-03-28T22:53:16 raccoon.local whiskey: warning message!") { new String(p.getData, 0, p.getLength) }
+        expect("<12>2008-03-28T22:53:16 raccoon.local [pingd] whiskey: warning message!") { new String(p.getData, 0, p.getLength) }
         serverSocket.receive(p)
         expect("<15>2008-03-28T22:53:16 raccoon.local whiskey: and debug!") { new String(p.getData, 0, p.getLength) }
 
