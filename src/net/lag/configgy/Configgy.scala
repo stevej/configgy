@@ -4,13 +4,26 @@ import java.io.File
 import net.lag.logging.Logger
 
 
+/**
+ * Main API entry point into the configgy library.
+ */
 object Configgy {
     private var _config: Config = null
     private val subscriber = new LoggingConfigSubscriber
 
+    /**
+     * The base Config object for this server. This will only be defined
+     * after calling one of <code>configure</code> or
+     * <code>configureFromResource</code>.
+     */
     def config = _config
 
 
+    /**
+     * Configure the server by loading a config file from the given path
+     * and filename. The filename must be relative to the path. The path is
+     * used to resolve filenames given in "include" lines.
+     */
     def configure(path: String, filename: String): Unit = {
         Logger.reset
 
@@ -27,6 +40,11 @@ object Configgy {
         configLogging
     }
 
+    /**
+     * Configure the server by loading a config file from the given filename.
+     * The base folder will be extracted from the filename and used as a base
+     * path for resolving filenames given in "include" lines.
+     */
     def configure(filename: String): Unit = {
         val n = filename.lastIndexOf('/')
         if (n < 0) {
@@ -36,6 +54,11 @@ object Configgy {
         }
     }
 
+    /**
+     * Configure the server by loading a config file from the given named
+     * resource inside this jar file. "include" lines will also operate
+     * on resource paths.
+     */
     def configureFromResource(name: String) = {
         Logger.reset
 

@@ -14,7 +14,7 @@ private case object COMMIT_PHASE extends Phase
 private class SubscriptionNode {
     var subscribers = new mutable.HashSet[Subscriber]
     var map = new mutable.HashMap[String, SubscriptionNode]
-    
+
     def get(name: String): SubscriptionNode = {
         map.get(name) match {
             case Some(x) => x
@@ -25,7 +25,7 @@ private class SubscriptionNode {
             }
         }
     }
-    
+
     override def toString = {
         val out = new StringBuilder("%d" format subscribers.size)
         if (map.size > 0) {
@@ -40,7 +40,7 @@ private class SubscriptionNode {
         }
         out.toString
     }
-    
+
     @throws(classOf[ValidationException])
     def validate(key: List[String], current: Option[AttributeMap], replacement: Option[AttributeMap], phase: Phase): Unit = {
         if ((current == None) && (replacement == None)) {
@@ -55,7 +55,7 @@ private class SubscriptionNode {
                 case COMMIT_PHASE => subscriber.commit(current, replacement)
             }
         }
-        
+
         /* if we're walking a key, lookup the next segment's subscribers and
          * continue the validate/commit. if the key is exhausted, call
          * subscribers for ALL nodes below this one.
@@ -70,7 +70,7 @@ private class SubscriptionNode {
                 }
             }
         }
-        
+
         for (val (segment, node) <- nextNodes) {
             val subCurrent = current match {
                 case None => None
@@ -86,33 +86,53 @@ private class SubscriptionNode {
 }
 
 
+/**
+ * An attribute map of key/value pairs and subscriptions, where values may
+ * be other attribte maps. Config objects represent the "root" of a nested
+ * set of attribute maps, and control the flow of subscriptions and events
+ * for subscribers.
+ */
 class Config extends AttributeMap {
     private var root = new Attributes(this, "")
     private val subscribers = new SubscriptionNode
     private val subscriberKeys = new mutable.HashMap[Int, (SubscriptionNode, Subscriber)]
     private var nextKey = 1
+
+    /**
+     * Importer used to resolve "include" lines when loading config files.
+     * By default, a FilesystemImporter based on the current working directry.
+     */
     var importer: Importer = new FilesystemImporter(new File(".").getCanonicalPath)
 
+    /**
+     * Read config data from a string and use it to populate this object.
+     */
     def load(data: String) = {
         new ConfigParser(root, importer).parse(data)
         root.setMonitored
     }
-    
+
+    /**
+     * Read config data from a file and use it to populate this object.
+     */
     def loadFile(filename: String) = {
         load(importer.importFile(filename))
     }
-    
+
+    /**
+     * Read config data from a file and use it to populate this object.
+     */
     def loadFile(path: String, filename: String) = {
         importer = new FilesystemImporter(path)
         load(importer.importFile(filename))
     }
-    
-    
+
+
     override def toString = root.toString
-    
-    
+
+
     // -----  subscriptions
-    
+
     private[configgy] def subscribe(key: String, subscriber: Subscriber): SubscriptionKey = synchronized {
         root.setMonitored
         var subkey = nextKey
@@ -127,7 +147,7 @@ class Config extends AttributeMap {
         subscriberKeys += Pair(subkey, (node, subscriber))
         new SubscriptionKey(this, subkey)
     }
-    
+
     private[configgy] def subscribe(key: String)(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
         subscribe(key, new Subscriber {
             def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
@@ -136,11 +156,11 @@ class Config extends AttributeMap {
             }
         })
     }
-    
+
     def subscribe(subscriber: Subscriber) = subscribe(null.asInstanceOf[String], subscriber)
-    
+
     override def subscribe(f: (Option[AttributeMap]) => Unit) = subscribe(null.asInstanceOf[String])(f)
-    
+
     private[configgy] def unsubscribe(subkey: SubscriptionKey) = synchronized {
         subscriberKeys.get(subkey.id) match {
             case None => false
@@ -151,24 +171,27 @@ class Config extends AttributeMap {
             }
         }
     }
-    
+
+    /**
+     * Return a formatted string of all the subscribers, useful for debugging.
+     */
     def debugSubscribers = synchronized {
         "subs=" + subscribers.toString
     }
-    
-    
+
+
     // -----  modifications that happen within monitored Attributes nodes
-    
+
     @throws(classOf[ValidationException])
     private def deepChange(name: String, key: String, operation: (AttributeMap, String) => Boolean): Boolean = synchronized {
         val fullKey = if (name == "") (key) else (name + "." + key)
         val newRoot = root.copy
         val keyList = fullKey.split("\\.").toList
-        
+
         if (! operation(newRoot, fullKey)) {
             return false
         }
-        
+
         // throws exception if validation fails:
         subscribers.validate(keyList, Some(root), Some(newRoot), VALIDATE_PHASE)
         subscribers.validate(keyList, Some(root), Some(newRoot), COMMIT_PHASE)
@@ -177,22 +200,22 @@ class Config extends AttributeMap {
         root = newRoot
         true
     }
-    
+
     private[configgy] def deepSet(name: String, key: String, value: String) = {
         deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
     }
-    
+
     private[configgy] def deepSet(name: String, key: String, value: Array[String]) = {
         deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
     }
-    
+
     private[configgy] def deepRemove(name: String, key: String): Boolean = {
         deepChange(name, key, { (newRoot, fullKey) => newRoot.remove(fullKey) })
     }
-    
-    
+
+
     // -----  implement AttributeMap by wrapping our root object:
-    
+
     def get(key: String): Option[String] = root.get(key)
     def getAttributes(key: String): Option[AttributeMap] = root.getAttributes(key)
     def getStringList(key: String): Option[Array[String]] = root.getStringList(key)
