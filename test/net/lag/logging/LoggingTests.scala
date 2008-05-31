@@ -1,7 +1,7 @@
 package net.lag.logging
 
 import java.io.{BufferedReader, FileInputStream, InputStreamReader}
-import java.net.{DatagramPacket,DatagramSocket}
+import java.net.{DatagramPacket, DatagramSocket, InetSocketAddress}
 import java.util.{Date, logging => javalog}
 import sorg.testing._
 
@@ -268,6 +268,24 @@ object LoggingTests extends Tests {
             expect(folderName + "/test.log") { h.asInstanceOf[FileHandler].filename }
             expect("net.lag") { log.name }
             expect(1024) { h.asInstanceOf[Handler].truncate_at }
+        }
+
+        withTempFolder {
+            val TEST_DATA =
+                "node=\"net.lag\"\n" +
+                "syslog_host=\"example.com:212\"\n" +
+                "syslog_server_name=\"elmo\"\n"
+
+            val c = new Config
+            c.load(TEST_DATA)
+            val log = Logger.configure(c, false, false)
+
+            expect(1) { log.getHandlers.length }
+            val h = log.getHandlers()(0)
+            expect(true) { h.isInstanceOf[SyslogHandler] }
+            expect("example.com") { h.asInstanceOf[SyslogHandler].dest.asInstanceOf[InetSocketAddress].getHostName }
+            expect(212) { h.asInstanceOf[SyslogHandler].dest.asInstanceOf[InetSocketAddress].getPort }
+            expect("elmo") { h.asInstanceOf[SyslogHandler].serverName }
         }
     }
 
