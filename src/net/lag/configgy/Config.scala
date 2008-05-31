@@ -88,7 +88,7 @@ private class SubscriptionNode {
 
 /**
  * An attribute map of key/value pairs and subscriptions, where values may
- * be other attribte maps. Config objects represent the "root" of a nested
+ * be other attribute maps. Config objects represent the "root" of a nested
  * set of attribute maps, and control the flow of subscriptions and events
  * for subscribers.
  */
