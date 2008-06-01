@@ -66,7 +66,7 @@ private class SubscriptionNode {
             case segment :: _ => {
                 map.get(segment) match {
                     case None => return     // done!
-                    case Some(node) => nextNodes = immutable.HashSet((segment, node)).elements
+                    case Some(node) => nextNodes = Iterator.single((segment, node))
                 }
             }
         }
