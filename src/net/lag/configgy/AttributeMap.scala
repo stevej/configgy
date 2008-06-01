@@ -24,8 +24,27 @@ trait AttributeMap {
     def set(key: String, value: Array[String]): Unit
     def contains(key: String): Boolean
     def remove(key: String): Boolean
+
+    /**
+     * Return an iterator across the keys of this map.
+     */
     def keys: Iterator[String]
+
+    /**
+     * Return a new (immutable) map containing a deep copy of all the keys
+     * and values from this AttributeMap. Keys from nested maps will be
+     * compound (like <code>"inner.name"</code>).
+     */
     def asMap: Map[String, String]
+
+    /**
+     * Subscribe to changes on this map. Any changes (including deletions)
+     * that occur on this node will be sent through the subscriber to
+     * validate and possibly commit. See {@link Subscriber} for details
+     * on the validate/commit process.
+     *
+     * @return a key which can be used to cancel the subscription
+     */
     def subscribe(subscriber: Subscriber): SubscriptionKey
 
 
