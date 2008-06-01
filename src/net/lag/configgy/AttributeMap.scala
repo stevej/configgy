@@ -17,12 +17,56 @@ trait AttributeMap {
 
     // -----  required methods
 
+    /**
+     * Lookup an entry in this map, and if it exists and can be represented
+     * as a string, return it. Strings will be returned as-is, and string
+     * lists will be returned as a combined string. Nested AttributeMaps
+     * will return None as if there was no entry present.
+     */
     def get(key: String): Option[String]
+
+    /**
+     * Lookup an entry in this map, and if it exists and is a nested
+     * AttributeMap, return it. If the entry is a string or string list,
+     * it will return None as if there was no entry present.
+     */
     def getAttributes(key: String): Option[AttributeMap]
+
+    /**
+     * Lookup an entry in this map, and if it exists and can be represented
+     * as a string list, return it. String lists will be returned as-is, and
+     * strings will be returned as an array of length 1. Nested AttributeMaps
+     * will return None as if there was no entry present.
+     */
     def getStringList(key: String): Option[Array[String]]
+
+    /**
+     * Set a key/value pair in this map. If an entry already existed with
+     * that key, it's replaced.
+     *
+     * @throws AttributesException if the key already refers to a nested
+     *     AttributeMap
+     */
     def set(key: String, value: String): Unit
+
+    /**
+     * Set a key/value pair in this map. If an entry already existed with
+     * that key, it's replaced.
+     *
+     * @throws AttributesException if the key already refers to a nested
+     *     AttributeMap
+     */
     def set(key: String, value: Array[String]): Unit
+
+    /**
+     * Returns true if this map contains the given key.
+     */
     def contains(key: String): Boolean
+
+    /**
+     * Remove an entry with the given key, if it exists. Returns true if
+     * an entry was actually removed, false if not.
+     */
     def remove(key: String): Boolean
 
     /**

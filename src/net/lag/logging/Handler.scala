@@ -5,6 +5,10 @@ import scala.collection.mutable
 import net.lag.ConfiggyExtensions._
 
 
+/**
+ * A base log handler for scala. This extends the java built-in handler
+ * and connects it with a formatter automatically.
+ */
 abstract class Handler(_formatter: Formatter) extends javalog.Handler {
 
     setFormatter(_formatter)

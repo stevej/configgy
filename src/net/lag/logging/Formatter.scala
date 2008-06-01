@@ -25,11 +25,14 @@ object Formatter {
 
 
 /**
- * A standard log formatter for scala.
+ * A standard log formatter for scala. This extends the java built-in
+ * log formatter.
  *
- * Log entries are written in this format::
+ * Log entries are written in this format:
  *
+ * <pre>
  *     ERR [20080315-18:39:05.033] julius: et tu, brute?
+ * </pre>
  *
  * which indicates the level (error), the date/time, the logger's name
  * (julius), and the message. The logger's name is usually also the
