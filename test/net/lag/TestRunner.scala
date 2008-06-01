@@ -8,7 +8,7 @@ import net.lag.logging._
 
 object TestRunner {
     def sum(x: Seq[Int]) = (0 /: x) { _ + _ }
-        
+
     def main(args:Array[String]): Unit = {
         val results = new TestResult
 
@@ -19,7 +19,7 @@ object TestRunner {
                                   ConfigTests,
                                   LoggingTests,
                                   ConfiggyTests)
-                                      
+
         val testCount = sum(for (t <- suite.buf) yield t.asInstanceOf[sorg.testing.Tests].tests.length)
         Console.println("Running " + testCount + " unit tests:")
         suite.run(results)
