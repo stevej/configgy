@@ -99,8 +99,9 @@ class Config extends AttributeMap {
     private var nextKey = 1
 
     /**
-     * Importer used to resolve "include" lines when loading config files.
-     * By default, a FilesystemImporter based on the current working directry.
+     * Importer for resolving "include" lines when loading config files.
+     * By default, it's a FilesystemImporter based on the current working
+     * directory.
      */
     var importer: Importer = new FilesystemImporter(new File(".").getCanonicalPath)
 
@@ -108,7 +109,19 @@ class Config extends AttributeMap {
      * Read config data from a string and use it to populate this object.
      */
     def load(data: String) = {
-        new ConfigParser(root, importer).parse(data)
+        if (root.isMonitored) {
+            // reload: swap, validate, and replace.
+            var newRoot = new Attributes(this, "")
+            new ConfigParser(newRoot, importer).parse(data)
+
+            // throws exception if validation fails:
+            subscribers.validate(Nil, Some(root), Some(newRoot), VALIDATE_PHASE)
+            subscribers.validate(Nil, Some(root), Some(newRoot), COMMIT_PHASE)
+
+            root = newRoot
+        } else {
+            new ConfigParser(root, importer).parse(data)
+        }
         root.setMonitored
     }
 

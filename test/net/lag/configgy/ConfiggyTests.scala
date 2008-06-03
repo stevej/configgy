@@ -9,14 +9,14 @@ import net.lag.logging.{FileHandler, Logger}
 
 object ConfiggyTests extends Tests {
     override def testName = "ConfiggyTests"
-        
+
 
     private def writeConfigFile(filename: String, data: String) = {
         val f = new FileOutputStream(folderName + "/" + filename)
         f.write(data.getBytes)
         f.close
     }
-    
+
     private def readLogFile(filename: String) = {
         val f = new BufferedReader(new InputStreamReader(new FileInputStream(folderName + "/" + filename)))
         var lines: List[String] = Nil
@@ -27,8 +27,8 @@ object ConfiggyTests extends Tests {
         }
         lines.reverse.toArray
     }
-    
-    
+
+
     test("load simple config file") {
         withTempFolder {
             val data1 =
@@ -39,14 +39,14 @@ object ConfiggyTests extends Tests {
                 "    level=\"WARNING\"\n" +
                 "</log>\n"
             writeConfigFile("test.conf", data1)
-            
+
             Configgy.configure(folderName, "test.conf")
-            
+
             // verify the config file got loaded:
             expect("Nibbler") { Configgy.config("name").get }
             Logger.get.info("this is at info level.")
             Logger.get.warning("this is at warning level.")
-            
+
             // manually check that the loggers are correct:
             val root = Logger.get("")
             expect("WARNING") { root.getLevel.getName }
@@ -62,7 +62,7 @@ object ConfiggyTests extends Tests {
             expect("WAR configgy: this is at warning level.") { lines(0) }
         }
     }
-    
+
     test("load config file with multiple logfiles and levels") {
         withTempFolder {
             val data1 =
@@ -84,20 +84,20 @@ object ConfiggyTests extends Tests {
                 "    </troublesome>\n" +
                 "</log>\n"
             writeConfigFile("test.conf", data1)
-            
+
             Configgy.configure(folderName, "test.conf")
-            
+
             // test.log should get any warnings, but test2.log should only get fatals from monkey.
             Logger.get("net.lag.cat.1").warning("message one")
             Logger.get("net.lag.cat.1").fatal("message two")
             Logger.get("net.lag.monkey.1").error("message three")
             Logger.get("net.lag.monkey.1").fatal("message four")
-            
+
             // debug messages should be logged to test.log, but only from pig.
             Logger.get("net.lag.cat.1").debug("message five")
             Logger.get("net.lag.monkey.1").debug("message six")
             Logger.get("net.lag.pig.1").debug("message seven")
-            
+
             Logger.reset
             val lines = readLogFile("test.log")
             expect(4) { lines.length }
@@ -110,7 +110,7 @@ object ConfiggyTests extends Tests {
             expect("FAT monkey: message four") { lines2(0) }
         }
     }
-    
+
     test("on-the-fly config changes are reflected in logging") {
         withTempFolder {
             val data1 =
@@ -121,25 +121,65 @@ object ConfiggyTests extends Tests {
                 "    level=\"WARNING\"\n" +
                 "</log>\n"
             writeConfigFile("test.conf", data1)
-            
+
             Configgy.configure(folderName, "test.conf")
-            
+
             // test.log should only get the warning for this one:
             Logger.get("net.lag.cat.1").info("message one")
             Logger.get("net.lag.cat.1").warning("message two")
-            
+
             Configgy.config("log.level") = "debug"
-            
+
             // test.log should get both of these:
             Logger.get("net.lag.cat.1").info("message three")
             Logger.get("net.lag.cat.1").warning("message four")
-            
+
             Logger.reset
             val lines = readLogFile("test.log")
             expect(3) { lines.length }
             expect("WAR cat: message two") { lines(0) }
             expect("INF cat: message three") { lines(1) }
             expect("WAR cat: message four") { lines(2) }
+        }
+    }
+
+    test("reload") {
+        withTempFolder {
+            val data1 =
+                "<robot>\n" +
+                "    name=\"Nibbler\"\n" +
+                "    age = 23002\n" +
+                "</robot>\n" +
+                "<unchanged>\n" +
+                "    stuff = 0\n"
+                "</unchanged>\n"
+            writeConfigFile("test.conf", data1)
+            Configgy.configure(folderName, "test.conf")
+
+            expect(23002) { Configgy.config.getInt("robot.age", 0) }
+
+            var checked = false
+            var checkedAlso = false
+            Configgy.config.subscribe("robot") { (attr: Option[AttributeMap]) => checked = true }
+            Configgy.config.subscribe("unchanged") { (attr: Option[AttributeMap]) => checkedAlso = true }
+            expect(false) { checked }
+
+            val data2 =
+                "<robot>\n" +
+                "    name=\"Nibbler\"\n" +
+                "    age = 23003\n" +
+                "</robot>\n" +
+                "<unchanged>\n" +
+                "    stuff = 0\n"
+                "</unchanged>\n"
+            writeConfigFile("test.conf", data2)
+
+            Configgy.reload
+
+            // all subscribers (even for unchanged nodes) should be called.
+            expect(true) { checked }
+            expect(true) { checkedAlso }
+            expect(23003) { Configgy.config.getInt("robot.age", 0)}
         }
     }
 }

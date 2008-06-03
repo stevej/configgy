@@ -18,6 +18,9 @@ object Configgy {
      */
     def config = _config
 
+    // remember the previous path/filename we loaded, for reload().
+    private var previousPath: String = null
+    private var previousFilename: String = null
 
     /**
      * Configure the server by loading a config file from the given path
@@ -38,6 +41,9 @@ object Configgy {
         }
 
         configLogging
+
+        previousPath = path
+        previousFilename = filename
     }
 
     /**
@@ -51,6 +57,23 @@ object Configgy {
             configure(new File(".").getCanonicalPath, filename)
         } else {
             configure(filename.substring(0, n), filename.substring(n + 1))
+        }
+    }
+
+    /**
+     * Reload the previously-loaded config file from disk. Any changes will
+     * take effect immediately. <b>All</b> subscribers will be called to
+     * verify and commit the change (even if their nodes didn't actually
+     * change).
+     */
+    def reload: Unit = {
+        try {
+            _config.loadFile(previousPath, previousFilename)
+        } catch {
+            case e: Throwable => {
+                Logger.get.critical(e, "Failed to reload config file '%s/%s'", previousPath, previousFilename)
+                throw e
+            }
         }
     }
 

@@ -291,6 +291,8 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         }
     }
 
+    protected[configgy] def isMonitored = monitored
+
     protected[configgy] def inheritFrom(attr: Attributes) = {
         inherit = Some(attr)
     }
