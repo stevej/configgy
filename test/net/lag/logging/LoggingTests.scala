@@ -85,7 +85,7 @@ object LoggingTests extends Tests {
     }
 
     test("simple") {
-        val log = Logger.get("")
+        val log = Logger("")
         log.error("error!")
         expect(List("ERR [20080328-22:53:16.722] (root): error!")) { eat(handler.toString) }
     }

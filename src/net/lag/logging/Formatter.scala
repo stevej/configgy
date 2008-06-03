@@ -28,26 +28,43 @@ object Formatter {
  * A standard log formatter for scala. This extends the java built-in
  * log formatter.
  *
- * Log entries are written in this format:
+ * Truncation, exception formatting, multi-line logging, and time zones
+ * are handled in this class. Subclasses are called for formatting the
+ * line prefix, formatting the date, and determining the line terminator.
  *
- * <pre>
- *     ERR [20080315-18:39:05.033] julius: et tu, brute?
- * </pre>
- *
- * which indicates the level (error), the date/time, the logger's name
- * (julius), and the message. The logger's name is usually also the
- * last significant segment of the package name (ie "com.lag.julius"),
- * although packages can override this.
  */
 abstract class Formatter extends javalog.Formatter {
 
+    /**
+     * Where to truncate log messages (character count). 0 = don't truncate.
+     */
     var truncate_at: Int = 0
+
+    /**
+     * Where to truncate stack traces in exception logging (line count).
+     */
     var truncate_stack_traces_at: Int = 30
+
     private var _use_utc = false
+
+    /**
+     * Calendar to use for time zone display in date-time formatting.
+     */
     var calendar = new GregorianCalendar
 
+    /**
+     * Return <code>true</code> if dates in log messages are being reported
+     * in UTC time, or <code>false</code> if they're being reported in local
+     * time.
+     */
     def use_utc = _use_utc
 
+    /**
+     * Set whether dates in log messages should be reported in UTC time
+     * (<code>true</code>) or local time (<code>false</code>, the default).
+     * This variable and <code>timeZone</code> affect the same settings, so
+     * whichever is called last will take precedence.
+     */
     def use_utc_=(utc: Boolean) = {
         _use_utc = utc
         if (utc) {
@@ -59,20 +76,38 @@ abstract class Formatter extends javalog.Formatter {
         dateFormat.setCalendar(calendar)
     }
 
+    /**
+     * Return the name of the time zone currently used for formatting dates
+     * in log messages. Normally this will either be the local time zone or
+     * UTC (if <code>use_utc</code> was set), but it can also be set
+     * manually.
+     */
     def timeZone = calendar.getTimeZone.getDisplayName
 
+    /**
+     * Set the time zone for formatting dates in log messages. The time zone
+     * name must be one known by the java <code>TimeZone</code> class.
+     */
     def timeZone_=(name: String) = {
         calendar = new GregorianCalendar(TimeZone.getTimeZone(name))
         dateFormat.setCalendar(calendar)
     }
 
-    // implement me!
+    /**
+     * Return the date formatter to use for log messages.
+     */
     def dateFormat: SimpleDateFormat
 
-    // implement me!
+    /**
+     * Return the line terminator (if any) to use at the end of each log
+     * message.
+     */
     def lineTerminator: String
 
-    // implement me!
+    /**
+     * Return the string to prefix each log message with, given a log level,
+     * formatted date string, and package name.
+     */
     def formatPrefix(level: javalog.Level, date: String, name: String): String
 
     override def format(record: javalog.LogRecord): String = {
@@ -110,6 +145,18 @@ abstract class Formatter extends javalog.Formatter {
 }
 
 
+/**
+ * The standard log formatter for a logfile. Log entries are written in this format:
+ *
+ * <pre>
+ *     ERR [20080315-18:39:05.033] julius: et tu, brute?
+ * </pre>
+ *
+ * which indicates the level (error), the date/time, the logger's name
+ * (julius), and the message. The logger's name is usually also the
+ * last significant segment of the package name (ie "com.lag.julius"),
+ * although packages can override this.
+ */
 class FileFormatter extends Formatter {
     private val DATE_FORMAT = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
 

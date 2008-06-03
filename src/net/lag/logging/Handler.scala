@@ -28,7 +28,6 @@ abstract class Handler(_formatter: Formatter) extends javalog.Handler {
 
     def use_utc = formatter.use_utc
     def use_utc_=(utc: Boolean) = formatter.use_utc = utc
-    def calendar = formatter.calendar
     def formatter = getFormatter.asInstanceOf[Formatter]
 
     override def toString = {

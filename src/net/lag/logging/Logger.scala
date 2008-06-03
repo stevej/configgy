@@ -24,10 +24,20 @@ case object TRACE extends Level("TRACE", 400)
 class LoggingException(reason: String) extends Exception(reason)
 
 
+/**
+ * Scala wrapper for java's Logger class.
+ */
 class Logger private(val name: String, private val wrapped: javalog.Logger) {
 
+    /**
+     * Log a message, with sprintf formatting, at the desired level.
+     */
     def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
 
+    /**
+     * Log a message, with sprintf formatting, at the desired level, and
+     * attach an exception and stack trace.
+     */
     def log(level: Level, thrown: Throwable, msg: String, items: Any*): Unit = {
         val myLevel = getLevel
         if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
@@ -121,6 +131,9 @@ object Logger {
         root.setLevel(INFO)
     }
 
+    /**
+     * Remove all existing log handlers from all existing loggers.
+     */
     def clearHandlers = {
         for (logger <- elements) {
             for (handler <- logger.getHandlers) {
@@ -133,6 +146,10 @@ object Logger {
         }
     }
 
+    /**
+     * Return a logger for the given package name. If one doesn't already
+     * exist, a new logger will be created and returned.
+     */
     def get(name: String): Logger = {
         loggersCache.get(name) match {
             case Some(logger) => logger
@@ -153,6 +170,15 @@ object Logger {
         }
     }
 
+    /** An alias for <code>get(name)</code> */
+    def apply(name: String) = get(name)
+
+    /**
+     * Return a logger for the package of the class/object that called
+     * this method. Normally you would use this in a "private val"
+     * declaration on the class/object. The package name is determined
+     * by sniffing around on the stack.
+     */
     def get: Logger = {
         val className = new Throwable().getStackTrace()(1).getClassName
         if (className.endsWith("$")) {
@@ -161,6 +187,9 @@ object Logger {
             get(className)
         }
     }
+
+    /** An alias for <code>get()</code> */
+    def apply() = get
 
     /**
      * Iterate the Logger objects that have been created.
