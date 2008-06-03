@@ -292,9 +292,9 @@ object Logger {
             if (level != null) {
                 handler.setLevel(level)
             }
-            handler.use_utc = config.getBool("utc", false)
-            handler.truncate_at = config.getInt("truncate", 0)
-            handler.truncate_stack_traces_at = config.getInt("truncate_stack_traces", 30)
+            handler.useUtc = config.getBool("utc", false)
+            handler.truncateAt = config.getInt("truncate", 0)
+            handler.truncateStackTracesAt = config.getInt("truncate_stack_traces", 30)
             if (! validateOnly) {
                 logger.addHandler(handler)
             }

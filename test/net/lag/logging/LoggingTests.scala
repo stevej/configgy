@@ -93,7 +93,7 @@ object LoggingTests extends Tests {
     // verify that we can ask logs to be written in UTC
     test("utc") {
         val log = Logger.get("")
-        log.getHandlers()(0).asInstanceOf[Handler].use_utc = true
+        log.getHandlers()(0).asInstanceOf[Handler].useUtc = true
         log.error("error!")
         expect(List("ERR [20080329-05:53:16.722] (root): error!")) { eat(handler.toString) }
     }
@@ -126,7 +126,7 @@ object LoggingTests extends Tests {
     }
 
     test("truncate") {
-        handler.truncate_at = 30
+        handler.truncateAt = 30
         val log1 = Logger.get("net.lag.whiskey.Train")
         log1.critical("Something terrible happened that may take a very long time to explain because I write crappy log messages.")
 
@@ -136,7 +136,7 @@ object LoggingTests extends Tests {
     }
 
     test("stack traces") {
-        handler.truncate_stack_traces_at = 5
+        handler.truncateStackTracesAt = 5
         val log1 = Logger.get("net.lag.whiskey.Train")
         try {
             Crazy.cycle(10)
@@ -157,7 +157,7 @@ object LoggingTests extends Tests {
     }
 
     test("stack traces 2") {
-        handler.truncate_stack_traces_at = 2
+        handler.truncateStackTracesAt = 2
         val log1 = Logger.get("net.lag.whiskey.Train")
         try {
             Crazy.cycle2(2)
@@ -267,7 +267,7 @@ object LoggingTests extends Tests {
             val h = log.getHandlers()(0)
             expect(folderName + "/test.log") { h.asInstanceOf[FileHandler].filename }
             expect("net.lag") { log.name }
-            expect(1024) { h.asInstanceOf[Handler].truncate_at }
+            expect(1024) { h.asInstanceOf[Handler].truncateAt }
         }
 
         withTempFolder {

@@ -14,25 +14,53 @@ abstract class Handler(_formatter: Formatter) extends javalog.Handler {
     setFormatter(_formatter)
 
 
-    def truncate_at = formatter.truncate_at
+    /**
+     * Where to truncate log messages (character count). 0 = don't truncate.
+     */
+    def truncateAt = formatter.truncateAt
 
-    def truncate_at_=(n: Int) = {
-        formatter.truncate_at = n
+    /**
+     * Where to truncate log messages (character count). 0 = don't truncate.
+     */
+    def truncateAt_=(n: Int) = {
+        formatter.truncateAt = n
     }
 
-    def truncate_stack_traces_at = formatter.truncate_stack_traces_at
+    /**
+     * Where to truncate stack traces in exception logging (line count).
+     */
+    def truncateStackTracesAt = formatter.truncateStackTracesAt
 
-    def truncate_stack_traces_at_=(n: Int) = {
-        formatter.truncate_stack_traces_at = n
+    /**
+     * Where to truncate stack traces in exception logging (line count).
+     */
+    def truncateStackTracesAt_=(n: Int) = {
+        formatter.truncateStackTracesAt = n
     }
 
-    def use_utc = formatter.use_utc
-    def use_utc_=(utc: Boolean) = formatter.use_utc = utc
+    /**
+     * Return <code>true</code> if dates in log messages are being reported
+     * in UTC time, or <code>false</code> if they're being reported in local
+     * time.
+     */
+    def useUtc = formatter.useUtc
+
+    /**
+     * Set whether dates in log messages should be reported in UTC time
+     * (<code>true</code>) or local time (<code>false</code>, the default).
+     * This variable and <code>timeZone</code> affect the same settings, so
+     * whichever is called last will take precedence.
+     */
+    def useUtc_=(utc: Boolean) = formatter.useUtc = utc
+
+    /**
+     * Return the formatter associated with this log handler.
+     */
     def formatter = getFormatter.asInstanceOf[Formatter]
 
     override def toString = {
         "<%s level=%s utc=%s truncate=%d truncate_stack=%d>".format(getClass.getName, getLevel,
-            if (use_utc) "true" else "false", truncate_at, truncate_stack_traces_at)
+            if (useUtc) "true" else "false", truncateAt, truncateStackTracesAt)
     }
 }
 

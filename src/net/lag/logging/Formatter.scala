@@ -38,14 +38,14 @@ abstract class Formatter extends javalog.Formatter {
     /**
      * Where to truncate log messages (character count). 0 = don't truncate.
      */
-    var truncate_at: Int = 0
+    var truncateAt: Int = 0
 
     /**
      * Where to truncate stack traces in exception logging (line count).
      */
-    var truncate_stack_traces_at: Int = 30
+    var truncateStackTracesAt: Int = 30
 
-    private var _use_utc = false
+    private var _useUtc = false
 
     /**
      * Calendar to use for time zone display in date-time formatting.
@@ -57,7 +57,7 @@ abstract class Formatter extends javalog.Formatter {
      * in UTC time, or <code>false</code> if they're being reported in local
      * time.
      */
-    def use_utc = _use_utc
+    def useUtc = _useUtc
 
     /**
      * Set whether dates in log messages should be reported in UTC time
@@ -65,8 +65,8 @@ abstract class Formatter extends javalog.Formatter {
      * This variable and <code>timeZone</code> affect the same settings, so
      * whichever is called last will take precedence.
      */
-    def use_utc_=(utc: Boolean) = {
-        _use_utc = utc
+    def useUtc_=(utc: Boolean) = {
+        _useUtc = utc
         if (utc) {
             // kind of ridiculous.
             calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"))
@@ -127,8 +127,8 @@ abstract class Formatter extends javalog.Formatter {
         if (record.getParameters != null) {
             message = String.format(message, record.getParameters)
         }
-        if ((truncate_at > 0) && (message.length > truncate_at)) {
-            message = message.substring(0, truncate_at) + "..."
+        if ((truncateAt > 0) && (message.length > truncateAt)) {
+            message = message.substring(0, truncateAt) + "..."
         }
 
         // allow multi-line log entries to be atomic:
@@ -137,7 +137,7 @@ abstract class Formatter extends javalog.Formatter {
 
         if (record.getThrown != null) {
             lines += record.getThrown.toString
-            lines ++= Formatter.formatStackTrace(record.getThrown, truncate_stack_traces_at)
+            lines ++= Formatter.formatStackTrace(record.getThrown, truncateStackTracesAt)
         }
         val prefix = formatPrefix(record.getLevel, dateFormat.format(new Date(record.getMillis)), name)
         lines.mkString(prefix, lineTerminator + prefix, lineTerminator)
