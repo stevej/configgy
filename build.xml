@@ -2,7 +2,7 @@
 <project name="configgy" default="default" basedir=".">
     <description> Simple configuration and logging for scala. </description>
     
-    <property name="version" value="0.9" />
+    <property name="version" value="1.0" />
     
     <property name="build.dir" value="build" />
     <property name="test.dir" value="build-test" />
