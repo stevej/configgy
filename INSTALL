@@ -1,0 +1,15 @@
+
+========
+CONFIGGY
+========
+
+Installation instructions are very simple:
+
+  1. Make sure ``SCALA_HOME`` is set correctly.
+
+  2. ``ant install``
+  
+  3. The jar will now be in ``configgy-<version>.jar`` and API docs will be
+     in the ``docs`` folder.
+
+Read the ``README`` for how to use it!

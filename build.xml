@@ -69,6 +69,7 @@
         </scaladoc>
     </target>
     
+    <target name="install" depends="jar,docs" />
 
     <target name="clean" depends="init">
         <delete dir="${build.dir}"/>
