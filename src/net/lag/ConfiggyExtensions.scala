@@ -5,13 +5,13 @@ import scala.util.matching.Regex
 
 final class ConfiggyString(wrapped: String) {
     import ConfiggyExtensions._
-    
+
     /**
      * Scala does not yet (Dec 2007) support java's String.format natively.
      * Fake it by building the Object[] manually for a handful of params.
      */
     def format(items: Any*): String = String.format(wrapped, items.toArray.asInstanceOf[Array[Object]])
-    
+
     /**
      * For every section of a string that matches a regular expression, call
      * a function to determine a replacement (as in python's
@@ -37,7 +37,7 @@ final class ConfiggyString(wrapped: String) {
     def regexSub(re: Regex, replace: (Regex.MatchData => String)): String = {
         var offset = 0
         var out = new StringBuilder
-        
+
         for (val m <- re.findAllIn(wrapped).matchData) {
             if (m.start > offset) {
                 out.append(wrapped.substring(offset, m.start))
@@ -52,7 +52,7 @@ final class ConfiggyString(wrapped: String) {
         }
         out.toString
     }
-    
+
     private val QUOTE_RE = "[\u0000-\u001f\u007f-\uffff\\\\\"]".r
 
     /**
@@ -83,7 +83,7 @@ final class ConfiggyString(wrapped: String) {
             }
         })
     }
-    
+
     // we intentionally don't unquote "\$" here, so it can be used to escape interpolation later.
     private val UNQUOTE_RE = "\\\\(u[\\dA-Fa-f]{4}|x[\\dA-Fa-f]{2}|[rnt\"\\\\])".r
 
@@ -128,7 +128,7 @@ final class ConfiggyByteArray(wrapped: Array[Byte]) {
         }
         out.toString
     }
-    
+
 }
 
 
