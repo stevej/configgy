@@ -1,7 +1,7 @@
 package net.lag.logging
 
 import java.io.{BufferedReader, FileInputStream, InputStreamReader}
-import java.net.{DatagramPacket,DatagramSocket}
+import java.net.{DatagramPacket, DatagramSocket, InetSocketAddress}
 import java.util.{Date, logging => javalog}
 import sorg.testing._
 
@@ -29,6 +29,8 @@ object Crazy {
 
 
 class TimeWarpingStringHandler extends StringHandler(new FileFormatter) {
+    formatter.timeZone = "GMT-7"
+
     override def publish(record: javalog.LogRecord) = {
         record.setMillis(1206769996722L)
         super.publish(record)
@@ -37,16 +39,20 @@ class TimeWarpingStringHandler extends StringHandler(new FileFormatter) {
 
 
 class TimeWarpingSyslogHandler(useIsoDateFormat: Boolean, server: String) extends SyslogHandler(useIsoDateFormat, server) {
+    formatter.timeZone = "GMT-7"
+
     override def publish(record: javalog.LogRecord) = {
         record.setMillis(1206769996722L)
         super.publish(record)
     }
-    
+
     getFormatter.asInstanceOf[SyslogFormatter].hostname = "raccoon.local"
 }
 
 
 class ImmediatelyRollingFileHandler(filename: String, policy: Policy) extends FileHandler(filename, policy, new FileFormatter) {
+    formatter.timeZone = "GMT-7"
+
     override def computeNextRollTime(): Long = System.currentTimeMillis + 100
 
     override def publish(record: javalog.LogRecord) = {
@@ -79,7 +85,7 @@ object LoggingTests extends Tests {
     }
 
     test("simple") {
-        val log = Logger.get("")
+        val log = Logger("")
         log.error("error!")
         expect(List("ERR [20080328-22:53:16.722] (root): error!")) { eat(handler.toString) }
     }
@@ -87,7 +93,7 @@ object LoggingTests extends Tests {
     // verify that we can ask logs to be written in UTC
     test("utc") {
         val log = Logger.get("")
-        log.getHandlers()(0).asInstanceOf[Handler].use_utc = true
+        log.getHandlers()(0).asInstanceOf[Handler].useUtc = true
         log.error("error!")
         expect(List("ERR [20080329-05:53:16.722] (root): error!")) { eat(handler.toString) }
     }
@@ -120,7 +126,7 @@ object LoggingTests extends Tests {
     }
 
     test("truncate") {
-        handler.truncate_at = 30
+        handler.truncateAt = 30
         val log1 = Logger.get("net.lag.whiskey.Train")
         log1.critical("Something terrible happened that may take a very long time to explain because I write crappy log messages.")
 
@@ -130,7 +136,7 @@ object LoggingTests extends Tests {
     }
 
     test("stack traces") {
-        handler.truncate_stack_traces_at = 5
+        handler.truncateStackTracesAt = 5
         val log1 = Logger.get("net.lag.whiskey.Train")
         try {
             Crazy.cycle(10)
@@ -151,7 +157,7 @@ object LoggingTests extends Tests {
     }
 
     test("stack traces 2") {
-        handler.truncate_stack_traces_at = 2
+        handler.truncateStackTracesAt = 2
         val log1 = Logger.get("net.lag.whiskey.Train")
         try {
             Crazy.cycle2(2)
@@ -162,7 +168,7 @@ object LoggingTests extends Tests {
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:25)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:157)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:163)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                     "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:14)",
@@ -221,7 +227,9 @@ object LoggingTests extends Tests {
 
         log.fatal("fatal message!")
         log.error("error message!")
+        syslog.serverName = "pingd"
         log.warning("warning message!")
+        syslog.clearServerName
         log.debug("and debug!")
 
         val p = new DatagramPacket(new Array[Byte](1024), 1024)
@@ -230,7 +238,7 @@ object LoggingTests extends Tests {
         serverSocket.receive(p)
         expect("<11>2008-03-28T22:53:16 raccoon.local whiskey: error message!") { new String(p.getData, 0, p.getLength) }
         serverSocket.receive(p)
-        expect("<12>2008-03-28T22:53:16 raccoon.local whiskey: warning message!") { new String(p.getData, 0, p.getLength) }
+        expect("<12>2008-03-28T22:53:16 raccoon.local [pingd] whiskey: warning message!") { new String(p.getData, 0, p.getLength) }
         serverSocket.receive(p)
         expect("<15>2008-03-28T22:53:16 raccoon.local whiskey: and debug!") { new String(p.getData, 0, p.getLength) }
 
@@ -259,7 +267,25 @@ object LoggingTests extends Tests {
             val h = log.getHandlers()(0)
             expect(folderName + "/test.log") { h.asInstanceOf[FileHandler].filename }
             expect("net.lag") { log.name }
-            expect(1024) { h.asInstanceOf[Handler].truncate_at }
+            expect(1024) { h.asInstanceOf[Handler].truncateAt }
+        }
+
+        withTempFolder {
+            val TEST_DATA =
+                "node=\"net.lag\"\n" +
+                "syslog_host=\"example.com:212\"\n" +
+                "syslog_server_name=\"elmo\"\n"
+
+            val c = new Config
+            c.load(TEST_DATA)
+            val log = Logger.configure(c, false, false)
+
+            expect(1) { log.getHandlers.length }
+            val h = log.getHandlers()(0)
+            expect(true) { h.isInstanceOf[SyslogHandler] }
+            expect("example.com") { h.asInstanceOf[SyslogHandler].dest.asInstanceOf[InetSocketAddress].getHostName }
+            expect(212) { h.asInstanceOf[SyslogHandler].dest.asInstanceOf[InetSocketAddress].getPort }
+            expect("elmo") { h.asInstanceOf[SyslogHandler].serverName }
         }
     }
 

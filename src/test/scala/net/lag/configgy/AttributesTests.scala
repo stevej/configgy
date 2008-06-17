@@ -6,7 +6,7 @@ import sorg.testing._
 
 
 object AttributesTests extends Tests {
-    
+
     override def testName = "AttributesTests"
 
     test("simple") {
@@ -19,7 +19,7 @@ object AttributesTests extends Tests {
         s.set("age", 19)
         expect("{root: age=\"19\" name=\"Communist\" }") { s.toString }
     }
-    
+
     test("read") {
         val s = new Attributes(null, "root")
         s("name") = "Communist"
@@ -37,7 +37,7 @@ object AttributesTests extends Tests {
         expect("8") { s("age", "500") }
         expect("500") { s("unknown", "500") }
     }
-    
+
     test("compound") {
         val s = new Attributes(null, "")
         s("name") = "Communist"
@@ -49,7 +49,7 @@ object AttributesTests extends Tests {
         expect("{: age=\"8\" data=\"\\r\\r\\xff\\xff\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } " +
                "disposition=\"fighter\" name=\"Communist\" }") { s.toString }
     }
-    
+
     test("contains") {
         val s = new Attributes(null, "")
         s("name") = "Communist"
@@ -63,7 +63,7 @@ object AttributesTests extends Tests {
         expect(false) { s.contains("diet.gas") }
         expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { s.toString }
     }
-    
+
     test("auto-vivify") {
         val s = new Attributes(null, "")
         s("a.b.c") = 8
@@ -72,7 +72,7 @@ object AttributesTests extends Tests {
         // shouldn't have changed the attr map:
         expect("{: a={a: b={a.b: c=\"8\" } } }") { s.toString }
     }
-    
+
     test("equals") {
         val s = new Attributes(null, "root")
         s("name") = "Communist"
@@ -82,10 +82,10 @@ object AttributesTests extends Tests {
         t("name") = "Communist"
         t("age") = 8
         t("diet.food.dry") = "Meow Mix"
-        
+
         expect(true) { s == t }
     }
-    
+
     test("remove") {
         val s = new Attributes(null, "")
         s("name") = "Communist"
@@ -114,7 +114,7 @@ object AttributesTests extends Tests {
             (for (val k <- keyList) yield (k + "=" + map(k))).mkString("{ ", ", ", " }")
         }
     }
-    
+
     test("copy") {
         val s = new Attributes(null, "")
         s("name") = "Communist"
@@ -122,10 +122,10 @@ object AttributesTests extends Tests {
         s("diet.food") = "Meow Mix"
         s("diet.liquid") = "water"
         val t = s.copy
-        
+
         expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { s.toString }
         expect("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }") { t.toString }
-        
+
         s("diet.food") = "fish"
 
         expect("{: age=\"8\" diet={diet: food=\"fish\" liquid=\"water\" } name=\"Communist\" }") { s.toString }

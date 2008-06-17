@@ -24,10 +24,20 @@ case object TRACE extends Level("TRACE", 400)
 class LoggingException(reason: String) extends Exception(reason)
 
 
+/**
+ * Scala wrapper for java's Logger class.
+ */
 class Logger private(val name: String, private val wrapped: javalog.Logger) {
 
+    /**
+     * Log a message, with sprintf formatting, at the desired level.
+     */
     def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
 
+    /**
+     * Log a message, with sprintf formatting, at the desired level, and
+     * attach an exception and stack trace.
+     */
     def log(level: Level, thrown: Throwable, msg: String, items: Any*): Unit = {
         val myLevel = getLevel
         if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
@@ -90,9 +100,6 @@ object Logger {
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
 
-    reset
-
-
     // convenience methods:
     def FATAL = logging.FATAL
     def CRITICAL = logging.CRITICAL
@@ -101,6 +108,16 @@ object Logger {
     def INFO = logging.INFO
     def DEBUG = logging.DEBUG
     def TRACE = logging.TRACE
+
+    // to force them to get loaded from class files:
+    root.setLevel(FATAL)
+    root.setLevel(CRITICAL)
+    root.setLevel(ERROR)
+    root.setLevel(WARNING)
+    root.setLevel(INFO)
+    root.setLevel(DEBUG)
+    root.setLevel(TRACE)
+    reset
 
 
     /**
@@ -114,6 +131,9 @@ object Logger {
         root.setLevel(INFO)
     }
 
+    /**
+     * Remove all existing log handlers from all existing loggers.
+     */
     def clearHandlers = {
         for (logger <- elements) {
             for (handler <- logger.getHandlers) {
@@ -126,6 +146,10 @@ object Logger {
         }
     }
 
+    /**
+     * Return a logger for the given package name. If one doesn't already
+     * exist, a new logger will be created and returned.
+     */
     def get(name: String): Logger = {
         loggersCache.get(name) match {
             case Some(logger) => logger
@@ -146,6 +170,15 @@ object Logger {
         }
     }
 
+    /** An alias for <code>get(name)</code> */
+    def apply(name: String) = get(name)
+
+    /**
+     * Return a logger for the package of the class/object that called
+     * this method. Normally you would use this in a "private val"
+     * declaration on the class/object. The package name is determined
+     * by sniffing around on the stack.
+     */
     def get: Logger = {
         val className = new Throwable().getStackTrace()(1).getClassName
         if (className.endsWith("$")) {
@@ -154,6 +187,9 @@ object Logger {
             get(className)
         }
     }
+
+    /** An alias for <code>get()</code> */
+    def apply() = get
 
     /**
      * Iterate the Logger objects that have been created.
@@ -185,7 +221,10 @@ object Logger {
      */
     def configure(config: AttributeMap, validateOnly: Boolean, allowNestedBlocks: Boolean): Logger = {
         // make sure no other screwy attributes are in this AttributeMap
-        val allowed = List("node", "console", "filename", "roll", "utc", "truncate", "truncate_stack_traces", "level", "use_parents")
+        val allowed = List("node", "console", "filename", "roll", "utc",
+                           "truncate", "truncate_stack_traces", "level",
+                           "use_parents", "syslog_host", "syslog_server_name",
+                           "syslog_use_iso_date_format")
         var forbidden = config.keys.filter(x => !(allowed contains x)).toList
         if (allowNestedBlocks) {
             forbidden = forbidden.filter(x => !config.getAttributes(x).isDefined)
@@ -205,6 +244,15 @@ object Logger {
 
         if (config.getBool("console", false)) {
             handlers = new ConsoleHandler(new FileFormatter) :: handlers
+        }
+
+        for (val hostname <- config.get("syslog_host")) {
+            val useIsoDateFormat = config.getBool("syslog_use_iso_date_format", true)
+            val handler = new SyslogHandler(useIsoDateFormat, hostname)
+            for (val serverName <- config.get("syslog_server_name")) {
+                handler.serverName = serverName
+            }
+            handlers = handler :: handlers
         }
 
         // options for using a logfile
@@ -241,10 +289,12 @@ object Logger {
         }
 
         for (val handler <- handlers) {
-            handler.setLevel(level)
-            handler.use_utc = config.getBool("utc", false)
-            handler.truncate_at = config.getInt("truncate", 0)
-            handler.truncate_stack_traces_at = config.getInt("truncate_stack_traces", 30)
+            if (level != null) {
+                handler.setLevel(level)
+            }
+            handler.useUtc = config.getBool("utc", false)
+            handler.truncateAt = config.getInt("truncate", 0)
+            handler.truncateStackTracesAt = config.getInt("truncate_stack_traces", 30)
             if (! validateOnly) {
                 logger.addHandler(handler)
             }

@@ -15,7 +15,7 @@ trait Importer {
      */
     @throws(classOf[ParseException])
     def importFile(filename: String): String
-   
+
     private val BUFFER_SIZE = 8192
 
     /**

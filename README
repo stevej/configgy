@@ -59,7 +59,7 @@ This is all you need to know to use the library::
     import net.lag.logging.Logger
 
     // load our config file and configure logfiles:
-    Configgy.configure("/etc", "pingd.conf")
+    Configgy.configure("/etc/pingd.conf")
     
     // read hostname and port:
     val config = Configgy.config
@@ -83,7 +83,7 @@ every night, and also sets a few simple config values::
     <log>
         filename = "/var/log/pingd.log"
         roll = "daily"
-        level = "DEBUG"
+        level = "debug"
     </log>
     
     hostname = "pingd.example.com"
@@ -156,9 +156,16 @@ are described below.
 ``console``
     ``true`` (``on``) if logs should be written to the stderr console
 
+``syslog_host``
+    hostname (or ``hostname:port``) to send syslog formatted log data to
+    (optional)
+
+``syslog_server_name``
+    server name to attach to log messages when sending to a syslog (optional)
+
 ``roll``
     when the logfile should be rolled (described below)
-    
+
 Logging severities are:
 
 =============  ================
@@ -188,8 +195,9 @@ Name         Description
              once a week
 ===========  =================
 
-For weekly logfile rolling, you may use any day of the week ("monday",
-"tuesday", etc), not just "sunday".
+You can omit a rolling policy, or use policy "never", to avoid rolling the
+logfiles. For weekly logfile rolling, you may use any day of the week
+("monday", "tuesday", etc), not just "sunday".
 
 When a logfile is rolled, the current logfile is renamed to have the date (and
 hour, if rolling hourly) attached, and a new one is started. So, for example,
@@ -204,7 +212,13 @@ So, for example::
         roll = "tuesday"
     </log>
 
-creates a logfile ``test.log`` that captures log entries only at warning, error, critical, or fatal levels. It's rolled once a week, at midnight on Tuesday morning.
+creates a logfile ``test.log`` that captures log entries only at warning,
+error, critical, or fatal levels. It's rolled once a week, at midnight on
+Tuesday morning.
+
+None of ``filename``, ``console``, or ``syslog_host`` are mutually exclusive,
+so you can define any or all of those targets, to have log messages sent to
+any possible combination of places.
 
 
 Advanced Features
@@ -254,7 +268,53 @@ The pingd block will use its own value of "timeout" (30), but will inherit
 
 Logging
 -------
-FIXME
+
+There are a handful of options to tune logging more directly:
+
+``utc``
+    ``on`` to log in UTC (previously known as GMT) time instead of local
+    time (default: off)
+
+``truncate``
+    number of characters to allow in a single log line before eliding with
+    "..." (default: 0 = never truncate)
+
+``truncate_stack_traces``
+    number of lines of a stack trace to show before eliding (default: 30)
+
+``syslog_use_iso_date_format``
+    set ``off`` to use old-style BSD date format in syslog messages
+    (default: on)
+
+The logging options are usually set on the root node of java's "logging tree",
+at "". You can set options or logging handlers at other nodes by putting them
+in config blocks inside ``<log>``. For example::
+
+    <log>
+        filename = "test.log"
+        level = "warning"
+        utc = true
+        
+        <squelch_noisy>
+            node = "com.example.libnoise"
+            level = "critical"
+        </squelch_noisy>
+    </log>
+
+The "com.example.libnoise" node will log at "critical" level (presumably to
+silence a noisy library), while everything else will log at "warning" level.
+You can put any of the logging options inside these blocks, including those
+for logging to files or syslog nodes, so in this way you can create multiple
+logfiles.
+
+The extra options you can use in these inner blocks are:
+
+``node``
+    define the log node name (as a string)
+
+``use_parents``
+    whether to fall back to parent log-node configuration (java's 
+    ``setUseParentHandlers``) (default: on)
 
 
 Usage from within scala
@@ -324,6 +384,58 @@ to catch the validation exception.
 
 Logging
 -------
-FIXME
+
+To access a logger from within a class or object, you can usually just use::
+
+    import net.lag.logging.Logger
+    private val log = Logger.get
+
+This creates a ``Logger`` object that uses the current class or object's
+package name as the logging node, so class "com.example.foo.Lamp" will log to
+node "com.example.foo" (generally showing "foo" as the name in the logfile).
+You can also get a logger explicitly by name:
+
+    private val log = Logger.get("com.example.foo")
+
+Logger objects wrap everything useful from "java.util.logging.Logger", as well
+as adding some convenience methods::
+
+    // log a string with sprintf conversion:
+    log.info("Starting compaction on level %d...", level)
+    
+    try {
+        ...
+    } catch {
+        // log an exception backtrace with the message:
+        case x: IOException => log.info(x, "I/O exception: %s", x.getMessage)
+    }
+
+Each of the log levels (from "fatal" to "trace") has these two convenience
+methods. You may also use ``log`` directly::
+
+    log(Logger.DEBUG, "Logging %s at debug level.", name)
+
+An advantage to using sprintf ("%s", etc) conversion, as opposed to::
+
+    log(Logger.DEBUG, "Logging " + name + " at debug level.")
+
+is that java & scala perform string concatenation at runtime, even if nothing
+will be logged because the logfile isn't writing debug messages right now.
+With sprintf parameters, the arguments are just bundled up and passed directly
+to the logging level before formatting. If no log message would be written to
+any file or device, then no formatting is done and the arguments are thrown
+away. That makes it very inexpensive to include excessive debug logging which
+can be turned off without recompiling and re-deploying.
+
+The logging classes are done as an extension to the ``java.util.logging`` API,
+and so if you want to use the java interface directly, you can. Each of the
+java classes (Logger, Handler, Formatter) is just wrapped by a scala class
+with a cleaner interface.
 
 
+Contact
+=======
+
+Configgy was written by Robey Pointer <robey@lag.net> and is licensed under
+the ISC license (included). Please write me with questions or comments, but
+the software is provided as-is.

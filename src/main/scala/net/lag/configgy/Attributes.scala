@@ -1,7 +1,7 @@
 package net.lag.configgy
 
 import java.util.regex.Pattern
-import scala.collection.{mutable, Map}
+import scala.collection.{immutable, mutable, Map}
 import net.lag.ConfiggyExtensions._
 
 
@@ -13,15 +13,18 @@ private[configgy] case class AttributesCell(attr: Attributes) extends Cell
 private[configgy] case class StringListCell(array: Array[String]) extends Cell
 
 
+/**
+ * Actual implementation of AttributeMap.
+ */
 private[configgy] class Attributes(val config: Config, val name: String) extends AttributeMap {
 
     private val cells = new mutable.HashMap[String, Cell]
     private var monitored = false
     private var inherit: Option[Attributes] = None
-    
-    
+
+
     def keys: Iterator[String] = cells.keys
-    
+
     override def toString() = {
         val buffer = new StringBuilder("{")
         buffer ++= name
@@ -44,17 +47,17 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         buffer ++= "}"
         buffer.toString
     }
-    
+
     override def equals(obj: Any) = {
         if (! obj.isInstanceOf[Attributes]) {
             false
         } else {
             val other = obj.asInstanceOf[Attributes]
-            (other.sortedKeys.toList == sortedKeys.toList) && 
+            (other.sortedKeys.toList == sortedKeys.toList) &&
                 (cells.keys forall (k => { cells(k) == other.cells(k) }))
         }
     }
-    
+
     /**
      * Look up a value cell for a given key. If the key is compound (ie,
      * "abc.xyz"), look up the first segment, and if it refers to an inner
@@ -83,7 +86,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
     }
-    
+
     /**
      * Determine if a key is compound (and requires recursion), and if so,
      * return the nested Attributes block and simple key that can be used to
@@ -117,7 +120,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             None
         }
     }
-    
+
     private def createNested(key: String): Attributes = {
         val attr = new Attributes(config, if (name.equals("")) key else (name + "." + key))
         if (monitored) {
@@ -126,7 +129,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         cells += Pair(key, new AttributesCell(attr))
         attr
     }
-    
+
     def get(key: String): Option[String] = {
         lookupCell(key) match {
             case Some(StringCell(x)) => Some(x)
@@ -134,14 +137,14 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             case _ => None
         }
     }
-        
+
     def getAttributes(key: String): Option[Attributes] = {
         lookupCell(key) match {
             case Some(AttributesCell(x)) => Some(x)
             case _ => None
         }
     }
-    
+
     private[configgy] def makeAttributes(key: String): Attributes = {
         if (key == "") {
             return this
@@ -155,7 +158,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
     }
-    
+
     def getStringList(key: String): Option[Array[String]] = {
         lookupCell(key) match {
             case Some(StringListCell(x)) => Some(x)
@@ -163,22 +166,22 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             case _ => None
         }
     }
-    
+
     def set(key: String, value: String): Unit = {
         if (monitored) {
             config.deepSet(name, key, value)
             return
         }
-        
+
         recurse(key) match {
             case Some((attr, name)) => attr.set(name, value)
             case None => cells.get(key) match {
-                case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key) 
+                case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
                 case _ => cells += Pair(key, new StringCell(value))
             }
         }
     }
-    
+
     def set(key: String, value: Array[String]): Unit = {
         if (monitored) {
             config.deepSet(name, key, value)
@@ -193,19 +196,19 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
     }
-    
+
     def contains(key: String): Boolean = {
         recurse(key) match {
             case Some((attr, name)) => attr.contains(name)
             case None => cells.contains(key)
         }
     }
-    
+
     def remove(key: String): Boolean = {
         if (monitored) {
             return config.deepRemove(name, key)
         }
-        
+
         recurse(key) match {
             case Some((attr, name)) => attr.remove(name)
             case None => {
@@ -216,31 +219,31 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
     }
-    
+
     def asMap: Map[String, String] = {
-        val ret = new mutable.HashMap[String, String]
+        var ret = immutable.Map.empty[String, String]
         for (val (key, value) <- cells) {
             value match {
-                case StringCell(x) => ret(key) = x
-                case StringListCell(x) => ret(key) = x.mkString("[", ",", "]")
+                case StringCell(x) => ret = ret.update(key, x)
+                case StringListCell(x) => ret = ret.update(key, x.mkString("[", ",", "]"))
                 case AttributesCell(x) => {
                     for (val (k, v) <- x.asMap) {
-                        ret(key + "." + k) = v
+                        ret = ret.update(key + "." + k, v)
                     }
                 }
             }
         }
         ret
     }
-    
+
     def subscribe(subscriber: Subscriber) = {
         config.subscribe(name, subscriber)
     }
-    
+
     // substitute "$(...)" strings with looked-up vars
     // (and find "\$" and replace them with "$")
     private val INTERPOLATE_RE = """(?<!\\)\$\((\w[\w\d\._-]*)\)|\\\$""".r
-    
+
     protected[configgy] def interpolate(s: String): String = {
         def lookup(key: String, path: List[AttributeMap]): String = {
             path match {
@@ -251,7 +254,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
                 }
             }
         }
-        
+
         s.regexSub(INTERPOLATE_RE, m => {
             if (m.matched == "\\$") {
                 "$"
@@ -262,14 +265,14 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         })
     }
-    
+
     protected[configgy] def interpolate(key: String, s: String): String = {
         recurse(key) match {
             case Some((attr, name)) => attr.interpolate(s)
             case None => interpolate(s)
         }
     }
-    
+
     /* set this node as part of a monitored config tree. once this is set,
      * all modification requests go through the root Config, so validation
      * will happen.
@@ -278,7 +281,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         if (monitored) {
             return
         }
-        
+
         monitored = true
         for (val cell <- cells.values) {
             cell match {
@@ -287,11 +290,13 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
     }
-    
+
+    protected[configgy] def isMonitored = monitored
+
     protected[configgy] def inheritFrom(attr: Attributes) = {
         inherit = Some(attr)
     }
-    
+
     // make a deep copy of the Attributes tree.
     def copy: Attributes = {
         val out = new Attributes(config, name)

@@ -16,16 +16,16 @@ private class JavaMap[K, E](override val underlying: java.util.Map[K, E]) extend
 private[configgy] object EnvironmentAttributes extends AttributeMap {
     private val env = new mutable.HashMap[String, String]
     env ++= new JavaMap(System.getenv()).elements
-    
+
     def get(key: String): Option[String] = env.get(key)
-    
+
     def getAttributes(key: String): Option[AttributeMap] = None
-        
+
     def getStringList(key: String): Option[Array[String]] = get(key) match {
         case None => None
         case Some(x) => Some(Array[String](x))
     }
-    
+
     def set(key: String, value: String): Unit = error("read-only attributes")
     def set(key: String, value: Array[String]): Unit = error("read-only attributes")
     def contains(key: String): Boolean = env.contains(key)
@@ -33,13 +33,13 @@ private[configgy] object EnvironmentAttributes extends AttributeMap {
     def keys: Iterator[String] = env.keys
     def asMap: Map[String, String] = error("not implemented")
     def subscribe(subscriber: Subscriber): SubscriptionKey = error("not implemented")
-    
-    
+
+
     try {
         val addr = InetAddress.getLocalHost
         val ip = addr.getHostAddress
         val dns = addr.getHostName
-        
+
         if (ip != null) {
             env("HOSTIP") = ip
         }

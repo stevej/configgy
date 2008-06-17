@@ -2,7 +2,7 @@
 <project name="configgy" default="default" basedir=".">
     <description> Simple configuration and logging for scala. </description>
     
-    <property name="version" value="0.9" />
+    <property name="version" value="1.0" />
     
     <property name="build.dir" value="build" />
     <property name="test.dir" value="build-test" />
@@ -64,11 +64,12 @@
     
     <target name="docs">
         <mkdir dir="${docs.dir}" />
-        <scaladoc srcdir="src" destdir="${docs.dir}">
+        <scaladoc srcdir="src" destdir="${docs.dir}" doctitle="Configgy" windowtitle="Configgy">
             <classpath refid="scala.classpath" />
         </scaladoc>
     </target>
     
+    <target name="install" depends="jar,docs" />
 
     <target name="clean" depends="init">
         <delete dir="${build.dir}"/>

@@ -28,11 +28,11 @@ trait Subscriber {
      * be committed.
      *
      * @param current the current config node, if it exists
-     * @param replacement the new config node, if it will exist 
+     * @param replacement the new config node, if it will exist
      */
     @throws(classOf[ValidationException])
     def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit
-    
+
     /**
      * Commit this change to the subscribed config node. If this method is
      * called, a prior call to <code>validate</code> with these parameters
@@ -41,7 +41,7 @@ trait Subscriber {
      * <code>replacement</code> (but not both) may be <code>None</code>.
      *
      * @param current the current (now previous) config node, if it existed
-     * @param replacement the new (now current) config node, if it exists 
+     * @param replacement the new (now current) config node, if it exists
      */
     def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit
 }

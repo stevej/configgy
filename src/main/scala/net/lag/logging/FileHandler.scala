@@ -51,7 +51,7 @@ class FileHandler(val filename: String, val policy: Policy, formatter: Formatter
             case Daily => new SimpleDateFormat("yyyyMMdd")
             case Weekly(_) => new SimpleDateFormat("yyyyMMdd")
         }
-        dateFormat.setCalendar(calendar)
+        dateFormat.setCalendar(formatter.calendar)
         dateFormat.format(date)
     }
 
@@ -60,7 +60,7 @@ class FileHandler(val filename: String, val policy: Policy, formatter: Formatter
      * logfile roll.
      */
     def computeNextRollTime(now: Long): Long = {
-        val next = calendar.clone.asInstanceOf[Calendar]
+        val next = formatter.calendar.clone.asInstanceOf[Calendar]
         next.setTimeInMillis(now)
         next.set(Calendar.MILLISECOND, 0)
         next.set(Calendar.SECOND, 0)
@@ -106,6 +106,7 @@ class FileHandler(val filename: String, val policy: Policy, formatter: Formatter
                 roll
             }
             stream.write(getFormatter.format(record))
+            stream.flush
         } catch {
             case e => {
                 System.err.println(Formatter.formatStackTrace(e, 30).mkString("\n"))
