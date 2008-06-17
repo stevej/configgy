@@ -4,8 +4,10 @@
     
     <property name="version" value="1.0" />
     
-    <property name="build.dir" value="build" />
-    <property name="test.dir" value="build-test" />
+    <property name="source.dir" value="src/main/scala" />
+    <property name="test.source.dir" value="src/test/scala" />
+    <property name="build.dir" value="target/classes" />
+    <property name="test.build.dir" value="target/test-classes" />
     <property name="docs.dir" value="docs" />
     
     <property environment="env" />
@@ -22,11 +24,11 @@
     
     <target name="init">
         <mkdir dir="${build.dir}" />
-        <mkdir dir="${test.dir}" />
+        <mkdir dir="${test.build.dir}" />
     </target>
 
     <target name="compile" depends="init">
-        <scalac srcdir="src" destdir="${build.dir}" force="changed" deprecation="on">
+        <scalac srcdir="${source.dir}" destdir="${build.dir}" force="changed" deprecation="on">
             <classpath>
                 <path refid="scala.classpath" />
             </classpath>
@@ -36,7 +38,7 @@
 
     <!-- scalatests doesn't work with scala 2.6.2 yet, so gotta wait.. -->
     <target name="compile-tests" depends="compile">
-        <scalac srcdir="test" destdir="${test.dir}" force="changed">
+        <scalac srcdir="${test.source.dir}" destdir="${test.build.dir}" force="changed">
             <classpath>
                 <path refid="scala.classpath" />
                 <pathelement location="${build.dir}" />
@@ -50,7 +52,7 @@
            <classpath>
                <path refid="scala.classpath" />
                <pathelement location="${build.dir}" />
-               <pathelement location="${test.dir}" />
+               <pathelement location="${test.build.dir}" />
            </classpath>
            <arg line="net.lag.TestRunner" />
        </java>
@@ -72,8 +74,9 @@
     <target name="install" depends="jar,docs" />
 
     <target name="clean" depends="init">
-        <delete dir="${build.dir}"/>
-        <delete dir="${test.dir}"/>
+        <delete dir="${build.dir}" />
+        <delete dir="${test.build.dir}" />
+        <delete dir="target" />
     </target>
 
 </project>
