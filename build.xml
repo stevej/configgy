@@ -65,6 +65,7 @@
     </target>
     
     <target name="docs">
+        <delete dir="${docs.dir}" />
         <mkdir dir="${docs.dir}" />
         <scaladoc srcdir="src" destdir="${docs.dir}" doctitle="Configgy" windowtitle="Configgy">
             <classpath refid="scala.classpath" />

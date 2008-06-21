@@ -168,7 +168,7 @@ object ConfigTests extends Tests {
          * so we can stuff something in build-test/ briefly to get it to
          * appear in the classpath.
          */
-        val tempFilename = new File(new File(".").getAbsolutePath, "build-test/happy.conf")
+        val tempFilename = new File(new File(".").getAbsolutePath, "target/test-classes/happy.conf")
         try {
             val data1 = "commie = 501\n"
             val f1 = new FileOutputStream(tempFilename)
