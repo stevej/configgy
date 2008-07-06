@@ -80,9 +80,10 @@ abstract class Tests extends Test with Assert {
     }
 
     def withTempFolder(f: => Any): Unit = {
+        val tempFolder = System.getProperty("java.io.tmpdir")
         var folder: File = null
         do {
-            folder = new File("/tmp/scala-test-" + System.currentTimeMillis)
+            folder = new File(tempFolder, "scala-test-" + System.currentTimeMillis)
         } while (! folder.mkdir)
         _folderName.set(folder)
 
