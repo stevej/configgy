@@ -24,6 +24,22 @@ case object TRACE extends Level("TRACE", 400)
 class LoggingException(reason: String) extends Exception(reason)
 
 
+private[logging] class LazyLogRecord(level: javalog.Level, messageGenerator: => AnyRef) extends javalog.LogRecord(level, "") {
+    // for each logged line, generate this string only once, regardless of how many handlers there are:
+    var cached: Option[AnyRef] = None
+
+    def generate = {
+        cached match {
+            case Some(value) =>
+                value
+            case None =>
+                cached = Some(messageGenerator)
+                cached.get
+        }
+    }
+}
+
+
 /**
  * Scala wrapper for java's Logger class.
  */
@@ -38,11 +54,27 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
      * Log a message, with sprintf formatting, at the desired level, and
      * attach an exception and stack trace.
      */
-    def log(level: Level, thrown: Throwable, msg: String, items: Any*): Unit = {
+    def log(level: Level, thrown: Throwable, message: String, items: Any*): Unit = {
         val myLevel = getLevel
         if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
-            val record = new javalog.LogRecord(level, msg)
+            val record = new javalog.LogRecord(level, message)
             record.setParameters(items.toArray.asInstanceOf[Array[Object]])
+            record.setLoggerName(wrapped.getName)
+            if (thrown != null) {
+                record.setThrown(thrown)
+            }
+            wrapped.log(record)
+        }
+    }
+
+    /**
+     * Log a message, with lazy (call-by-name) computation of the message,
+     * and attach an exception and stack trace.
+     */
+    def logLazy(level: Level, thrown: Throwable, message: => AnyRef): Unit = {
+        val myLevel = getLevel
+        if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
+            val record = new LazyLogRecord(level, message)
             record.setLoggerName(wrapped.getName)
             if (thrown != null) {
                 record.setThrown(thrown)

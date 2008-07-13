@@ -66,7 +66,7 @@ object LoggingTests extends Tests {
 
     override def testName = "LoggingTests"
 
-    private var handler = new StringHandler(new FileFormatter)
+    private var handler: Handler = null
 
     override def setUp = {
         Logger.clearHandlers
@@ -88,6 +88,24 @@ object LoggingTests extends Tests {
         val log = Logger("")
         log.error("error!")
         expect(List("ERR [20080328-22:53:16.722] (root): error!")) { eat(handler.toString) }
+    }
+
+    test("lazy message evaluation") {
+        val log = Logger.get("")
+        var callCount = 0
+        def getSideEffect = {
+            callCount += 1
+            "ok"
+        }
+        // add 2nd handler:
+        log.addHandler(new TimeWarpingStringHandler)
+        log.logLazy(ERROR, null, "this is " + getSideEffect)
+        // should not generate since it's not handled:
+        log.logLazy(DEBUG, null, "this is not " + getSideEffect)
+
+        expect(List("ERR [20080328-22:53:16.722] (root): this is ok")) { eat(handler.toString) }
+        // verify that the string was generated exactly once, even tho we logged it to 2 handlers:
+        expect(1) { callCount }
     }
 
     // verify that we can ask logs to be written in UTC
@@ -168,7 +186,7 @@ object LoggingTests extends Tests {
         expect(List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                     "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:25)",
-                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$7.apply(LoggingTests.scala:163)",
+                    "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingTests$$anonfun$8.apply(LoggingTests.scala:181)",
                     "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                     "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:14)",

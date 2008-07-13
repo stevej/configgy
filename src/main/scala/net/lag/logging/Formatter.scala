@@ -123,10 +123,18 @@ abstract class Formatter extends javalog.Formatter {
             }
         }
 
-        var message = record.getMessage
-        if (record.getParameters != null) {
-            message = String.format(message, record.getParameters)
+        var message: String = record match {
+            case r: LazyLogRecord =>
+                r.generate.toString
+            case r: javalog.LogRecord =>
+                r.getParameters match {
+                    case null =>
+                        r.getMessage
+                    case formatArgs =>
+                        String.format(r.getMessage, formatArgs)
+                }
         }
+
         if ((truncateAt > 0) && (message.length > truncateAt)) {
             message = message.substring(0, truncateAt) + "..."
         }
