@@ -16,20 +16,20 @@ class ParseException(reason: String) extends Exception(reason)
 private[configgy] class ConfigParser(var attr: Attributes, val importer: Importer) extends TokenParsers {
     type Tokens = ConfigLexer
     val lexical = new Tokens
-    
+
     import lexical.{Assign, CloseTag, Delim, Ident, Keyword, Number, OpenTag, QuotedString, TagAttribute}
-    
+
     val sections = new Stack[String]
     var prefix = ""
-    
-    
+
+
     def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose)
-    
+
     def value = number | string | stringList | onoff | trueFalse
     def number = accept("number", { case Number(x) => if (x.contains('.')) x else Integer.parseInt(x) })
     def string = accept("string", { case QuotedString(x) => attr.interpolate(prefix, x) })
     def stringList = accept(Delim("[")) ~> repsep(string, Delim(",")) <~ accept(Delim("]")) ^^ { list => list.toArray }
-    
+
     def assignment = assignName ~ accept("operation", { case Assign(x) => x }) ~ value ^^ {
         case k ~ a ~ v => if (a match {
             case "=" => true
@@ -41,7 +41,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
             case x: Boolean => attr(prefix + k) = x
         }
     }
-    def toggle = assignName ~ (onoff | trueFalse) ^^ { case k ~ v => attr(k) = v } 
+    def toggle = assignName ~ (onoff | trueFalse) ^^ { case k ~ v => attr(prefix + k) = v }
     def assignName = accept("key", { case Ident(x) => x })
     def onoff = accept("on/off", {
         case Ident("on") => true
@@ -63,7 +63,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
             }
         }
     }
-    
+
     def sectionClose = accept("close tag", { case CloseTag(x) => x }) ^^ {
         case x: String => {
             if (sections.isEmpty) {
@@ -78,13 +78,13 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
             }
         }
     }
-    
+
     def includeFile = accept(Keyword("include")) ~> string ^^ {
         case filename: String => {
             new ConfigParser(attr.makeAttributes(sections.mkString(".")), importer) parse importer.importFile(filename)
         }
     }
-    
+
     def parse(in: String): Unit = {
         phrase(root)(new lexical.Scanner(in)) match {
             case Success(result, _) => result
