@@ -99,9 +99,9 @@ object LoggingTests extends Tests {
         }
         // add 2nd handler:
         log.addHandler(new TimeWarpingStringHandler)
-        log.logLazy(ERROR, null, "this is " + getSideEffect)
+        log.ifError("this is " + getSideEffect)
         // should not generate since it's not handled:
-        log.logLazy(DEBUG, null, "this is not " + getSideEffect)
+        log.ifDebug("this is not " + getSideEffect)
 
         expect(List("ERR [20080328-22:53:16.722] (root): this is ok")) { eat(handler.toString) }
         // verify that the string was generated exactly once, even tho we logged it to 2 handlers:

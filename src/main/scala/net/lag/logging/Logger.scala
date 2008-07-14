@@ -41,9 +41,27 @@ private[logging] class LazyLogRecord(level: javalog.Level, messageGenerator: => 
 
 
 /**
- * Scala wrapper for java's Logger class.
+ * Scala wrapper for logging.
  */
 class Logger private(val name: String, private val wrapped: javalog.Logger) {
+    // wrapped methods:
+    def addHandler(handler: javalog.Handler) = wrapped.addHandler(handler)
+    def getFilter() = wrapped.getFilter()
+    def getHandlers() = wrapped.getHandlers()
+    def getLevel() = wrapped.getLevel()
+    def getParent() = wrapped.getParent()
+    def getUseParentHandlers() = wrapped.getUseParentHandlers()
+    def isLoggable(level: javalog.Level) = wrapped.isLoggable(level)
+    def log(record: javalog.LogRecord) = wrapped.log(record)
+    def removeHandler(handler: javalog.Handler) = wrapped.removeHandler(handler)
+    def setFilter(filter: javalog.Filter) = wrapped.setFilter(filter)
+    def setLevel(level: javalog.Level) = wrapped.setLevel(level)
+    def setUseParentHandlers(use: Boolean) = wrapped.setUseParentHandlers(use)
+
+    override def toString = {
+        "<%s name='%s' level=%s handlers=%s use_parent=%s>".format(getClass.getName, name, getLevel(),
+            getHandlers().toList.mkString("[", ", ", "]"), if (getUseParentHandlers()) "true" else "false")
+    }
 
     /**
      * Log a message, with sprintf formatting, at the desired level.
@@ -67,36 +85,6 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
         }
     }
 
-    /**
-     * Log a message, with lazy (call-by-name) computation of the message,
-     * and attach an exception and stack trace.
-     */
-    def logLazy(level: Level, thrown: Throwable, message: => AnyRef): Unit = {
-        val myLevel = getLevel
-        if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
-            val record = new LazyLogRecord(level, message)
-            record.setLoggerName(wrapped.getName)
-            if (thrown != null) {
-                record.setThrown(thrown)
-            }
-            wrapped.log(record)
-        }
-    }
-
-    // wrapped methods:
-    def addHandler(handler: javalog.Handler) = wrapped.addHandler(handler)
-    def getFilter() = wrapped.getFilter()
-    def getHandlers() = wrapped.getHandlers()
-    def getLevel() = wrapped.getLevel()
-    def getParent() = wrapped.getParent()
-    def getUseParentHandlers() = wrapped.getUseParentHandlers()
-    def isLoggable(level: javalog.Level) = wrapped.isLoggable(level)
-    def log(record: javalog.LogRecord) = wrapped.log(record)
-    def removeHandler(handler: javalog.Handler) = wrapped.removeHandler(handler)
-    def setFilter(filter: javalog.Filter) = wrapped.setFilter(filter)
-    def setLevel(level: javalog.Level) = wrapped.setLevel(level)
-    def setUseParentHandlers(use: Boolean) = wrapped.setUseParentHandlers(use)
-
     // convenience methods:
     def fatal(msg: String, items: Any*) = log(FATAL, msg, items: _*)
     def fatal(thrown: Throwable, msg: String, items: Any*) = log(FATAL, thrown, msg, items: _*)
@@ -113,10 +101,43 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     def trace(msg: String, items: Any*) = log(TRACE, msg, items: _*)
     def trace(thrown: Throwable, msg: String, items: Any*) = log(TRACE, thrown, msg, items: _*)
 
-    override def toString = {
-        "<%s name='%s' level=%s handlers=%s use_parent=%s>".format(getClass.getName, name, getLevel(),
-            getHandlers().toList.mkString("[", ", ", "]"), if (getUseParentHandlers()) "true" else "false")
+    /**
+     * Log a message, with lazy (call-by-name) computation of the message,
+     * at the desired level.
+     */
+    def logLazy(level: Level, message: => AnyRef): Unit = logLazy(level, null.asInstanceOf[Throwable], message)
+
+    /**
+     * Log a message, with lazy (call-by-name) computation of the message,
+     * and attach an exception and stack trace.
+     */
+    def logLazy(level: Level, thrown: Throwable, message: => AnyRef): Unit = {
+        val myLevel = getLevel
+        if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
+            val record = new LazyLogRecord(level, message)
+            record.setLoggerName(wrapped.getName)
+            if (thrown != null) {
+                record.setThrown(thrown)
+            }
+            wrapped.log(record)
+        }
     }
+
+    // convenience methods:
+    def ifFatal(message: => AnyRef) = logLazy(FATAL, message)
+    def ifFatal(thrown: Throwable, message: => AnyRef) = logLazy(FATAL, thrown, message)
+    def ifCritical(message: => AnyRef) = logLazy(CRITICAL, message)
+    def ifCritical(thrown: Throwable, message: => AnyRef) = logLazy(CRITICAL, thrown, message)
+    def ifError(message: => AnyRef) = logLazy(ERROR, message)
+    def ifError(thrown: Throwable, message: => AnyRef) = logLazy(ERROR, thrown, message)
+    def ifWarning(message: => AnyRef) = logLazy(WARNING, message)
+    def ifWarning(thrown: Throwable, message: => AnyRef) = logLazy(WARNING, thrown, message)
+    def ifInfo(message: => AnyRef) = logLazy(INFO, message)
+    def ifInfo(thrown: Throwable, message: => AnyRef) = logLazy(INFO, thrown, message)
+    def ifDebug(message: => AnyRef) = logLazy(DEBUG, message)
+    def ifDebug(thrown: Throwable, message: => AnyRef) = logLazy(DEBUG, thrown, message)
+    def ifTrace(message: => AnyRef) = logLazy(TRACE, message)
+    def ifTrace(thrown: Throwable, message: => AnyRef) = logLazy(TRACE, thrown, message)
 }
 
 
@@ -127,7 +148,7 @@ object Logger {
     // cache scala Logger objects per name
     private val loggersCache = new mutable.HashMap[String, Logger]
 
-    private val root = get("")
+    private val root: Logger = get("")
 
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
@@ -184,21 +205,21 @@ object Logger {
      */
     def get(name: String): Logger = {
         loggersCache.get(name) match {
-            case Some(logger) => logger
-            case None => {
+            case Some(logger) =>
+                logger
+            case None =>
                 val manager = javalog.LogManager.getLogManager
                 val logger = manager.getLogger(name) match {
-                    case null => {
+                    case null =>
                         val javaLogger = javalog.Logger.getLogger(name)
                         manager.addLogger(javaLogger)
                         new Logger(name, javaLogger)
-                    }
-                    case x: javalog.Logger => new Logger(name, x)
+                    case x: javalog.Logger =>
+                        new Logger(name, x)
                 }
                 logger.setUseParentHandlers(true)
                 loggersCache.put(name, logger)
                 logger
-            }
         }
     }
 
@@ -206,9 +227,9 @@ object Logger {
     def apply(name: String) = get(name)
 
     /**
-     * Return a logger for the package of the class/object that called
+     * Return a logger for the class name of the class/object that called
      * this method. Normally you would use this in a "private val"
-     * declaration on the class/object. The package name is determined
+     * declaration on the class/object. The class name is determined
      * by sniffing around on the stack.
      */
     def get: Logger = {
