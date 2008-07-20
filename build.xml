@@ -2,9 +2,7 @@
 <project name="configgy" default="install" basedir=".">
     <description> Simple configuration and logging for scala. </description>
 
-    <property name="project.name" value="configgy" />
-    <property name="project.version" value="1.1" />
-    <property name="project.package" value="net.lag.configgy" />
+    <property name="project.package" value="net/lag/configgy" />
     <property name="project.test.classname" value="net.lag.TestRunner" />
 
     <import file="ivy/bootstrap.xml" />

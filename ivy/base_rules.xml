@@ -9,13 +9,18 @@
     </target>
 
     <target name="resolve" depends="install-ivy">
-        <ivy:retrieve conf="bootstrap,default,test" />
+        <ivy:retrieve conf="bootstrap,default,test" pattern="${basedir}/target/libs/[conf]/[artifact]-[revision].[ext]" />
         <ivy:cachepath pathid="bootstrap.path" conf="bootstrap" />
         <ivy:cachepath pathid="deps.path" conf="default" />
         <ivy:cachepath pathid="test.path" conf="test" />
+<!-- FIXME remove these 2 -->
+        <property name="project.name" value="${ivy.module}" />
+        <property name="project.version" value="${ivy.revision}" />
+        <property name="dist.dir" value="${basedir}/dist/${ivy.module}-${ivy.revision}" />
+        <property name="docs.target.dir" value="${dist.dir}/docs" />
     </target>
     
-    <target name="prepare" depends="init,resolve" description="bootstrap ivy and scala and prepare to compile">
+    <target name="prepare" depends="resolve,init" description="bootstrap ivy and scala and prepare to compile">
         <taskdef resource="scala/tools/ant/antlib.xml" classpathref="bootstrap.path" />
     </target>
 
@@ -70,7 +75,7 @@
         </sequential>
     </macrodef>
     
-    <target name="compile-tests" depends="prepare">
+    <target name="compile-tests" depends="prepare,compile">
         <compile-scala-tests />
     </target>
     
@@ -132,7 +137,8 @@
     </target>
     
     <target name="install" depends="test,make-non-executable-jar,make-executable-jar,docs" description="build complete jar(s) and docs">
-        <ivy:makepom ivyfile="${basedir}/ivy.xml" pomfile="${dist.dir}/${project.name}-${project.version}.pom" />
+        <ivy:makepom ivyfile="${basedir}/ivy/ivy.xml" pomfile="${dist.dir}/${project.name}-${project.version}.pom" />
+        <copy file="${basedir}/ivy/ivy.xml" todir="${dist.dir}" />
     </target>
     
     <target name="docs" depends="prepare">
@@ -143,7 +149,7 @@
         </scaladoc>
     </target>
 
-    <target name="clean" description="erase built files and targets">
+    <target name="clean" depends="resolve" description="erase built files and targets">
         <delete dir="${target.dir}" />
         <delete dir="${test.target.dir}" />
         <delete dir="${dist.dir}" />
@@ -157,7 +163,7 @@
         <ivy:cleancache />
     </target>
     
-    <target name="dist-clean" depends="clean-cache,clean,clean-ivy" description="erase everything generated or built, even cached downloads">
+    <target name="dist-clean" depends="clean,clean-cache,clean-ivy" description="erase everything generated or built, even cached downloads">
         <delete dir="target" />
         <delete dir="dist" />
     </target>
