@@ -13,9 +13,6 @@
         <ivy:cachepath pathid="bootstrap.path" conf="bootstrap" />
         <ivy:cachepath pathid="deps.path" conf="default" />
         <ivy:cachepath pathid="test.path" conf="test" />
-<!-- FIXME remove these 2 -->
-        <property name="project.name" value="${ivy.module}" />
-        <property name="project.version" value="${ivy.revision}" />
         <property name="dist.dir" value="${basedir}/dist/${ivy.module}-${ivy.revision}" />
         <property name="docs.target.dir" value="${dist.dir}/docs" />
     </target>
@@ -47,8 +44,8 @@
     <macrodef name="write-build-info">
         <sequential>
             <propertyfile file="${target.dir}/${project.package}/build.properties">
-                <entry key="name" value="${project.name}" />
-                <entry key="version" value="${project.version}" />
+                <entry key="name" value="${ivy.module}" />
+                <entry key="version" value="${ivy.revision}" />
                 <entry key="build_name" value="${build.timestamp}" />
             </propertyfile>
         </sequential>
@@ -119,7 +116,7 @@
     </macrodef>
     
     <target name="make-non-executable-jar" unless="project.jar.classname">
-        <jar destfile="${dist.dir}/${project.name}-${project.version}.jar">
+        <jar destfile="${dist.dir}/${ivy.module}-${ivy.revision}.jar">
             <fileset dir="${target.dir}" />
         </jar>
     </target>
@@ -127,7 +124,7 @@
     <!-- generate a jar that contains all deps inside it, so it can be run with "java -jar" -->
     <target name="make-executable-jar" if="project.jar.classname">
         <copy-deps-into-dist />
-        <jar destfile="${dist.dir}/${project.name}-${project.version}.jar">
+        <jar destfile="${dist.dir}/${ivy.module}-${ivy.revision}.jar">
             <fileset dir="${target.dir}" />
             <manifest>
                 <attribute name="Main-Class" value="${project.jar.classname}" />
@@ -136,23 +133,37 @@
         </jar>
     </target>
     
-    <target name="install" depends="test,make-non-executable-jar,make-executable-jar,docs" description="build complete jar(s) and docs">
-        <ivy:makepom ivyfile="${basedir}/ivy/ivy.xml" pomfile="${dist.dir}/${project.name}-${project.version}.pom" />
-        <copy file="${basedir}/ivy/ivy.xml" todir="${dist.dir}" />
-    </target>
-    
     <target name="docs" depends="prepare">
         <delete dir="${docs.target.dir}" />
         <mkdir dir="${docs.target.dir}" />
-        <scaladoc srcdir="${source.dir}" destdir="${docs.target.dir}" doctitle="${project.name}" windowtitle="${project.name}">
+        <scaladoc srcdir="${source.dir}" destdir="${docs.target.dir}" doctitle="${ivy.module}" windowtitle="${ivy.module}">
             <classpath refid="deps.path" />
         </scaladoc>
     </target>
+    
+    <target name="install" depends="test,make-non-executable-jar,make-executable-jar,docs" description="build complete jar(s) and docs">
+        <ivy:makepom ivyfile="${basedir}/ivy/ivy.xml" pomfile="${dist.dir}/${ivy.module}-${ivy.revision}.pom" />
+        <copy file="${basedir}/ivy/ivy.xml" todir="${dist.dir}" />
+    </target>
 
-    <target name="clean" depends="resolve" description="erase built files and targets">
+    <target name="package" depends="install">
+        <copy file="INSTALL" todir="${dist.dir}" failonerror="false" />
+        <copy file="LICENSE" todir="${dist.dir}" failonerror="false" />
+        <copy file="README" todir="${dist.dir}" failonerror="false" />
+        <copy file="build.xml" todir="${dist.dir}" />
+        <copy todir="${dist.dir}/src">
+            <fileset dir="src" />
+        </copy>
+        <copy todir="${dist.dir}/ivy">
+            <fileset dir="ivy" />
+        </copy>
+        <zip destfile="${basedir}/dist/${ivy.module}-${ivy.revision}.zip" basedir="${basedir}/dist" includes="${ivy.module}-${ivy.revision}/**" />
+    </target>
+    
+    <target name="clean" description="erase built files and targets">
         <delete dir="${target.dir}" />
         <delete dir="${test.target.dir}" />
-        <delete dir="${dist.dir}" />
+        <delete dir="dist" />
     </target>
 
     <target name="clean-ivy">
@@ -163,9 +174,8 @@
         <ivy:cleancache />
     </target>
     
-    <target name="dist-clean" depends="clean,clean-cache,clean-ivy" description="erase everything generated or built, even cached downloads">
+    <target name="dist-clean" depends="clean-cache,clean,clean-ivy" description="erase everything generated or built, even cached downloads">
         <delete dir="target" />
-        <delete dir="dist" />
     </target>
 
 </project>

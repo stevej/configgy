@@ -1,7 +1,7 @@
 <project xmlns:ivy="antlib:org.apache.ivy.ant">
 
     <!-- defaults for all projects -->
-    <!-- PROJECT MUST DEFINE: project.name, project.version, project.package -->
+    <!-- PROJECT MUST DEFINE: project.package, project.test.classname -->
     <!-- optional: "project.jar.classname" to build an executable jar -->
     <!-- optional: "skip.download" "skip.tests" -->
     <property name="source.dir" value="${basedir}/src/main/scala" />
