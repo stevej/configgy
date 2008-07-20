@@ -1,83 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="configgy" default="default" basedir=".">
+<project name="configgy" default="install" basedir=".">
     <description> Simple configuration and logging for scala. </description>
-    
-    <property name="version" value="1.0" />
-    
-    <property name="source.dir" value="src/main/scala" />
-    <property name="test.source.dir" value="src/test/scala" />
-    <property name="build.dir" value="target/classes" />
-    <property name="test.build.dir" value="target/test-classes" />
-    <property name="docs.dir" value="docs" />
-    
-    <property environment="env" />
-    <property name="scala.home" value="${env.SCALA_HOME}" />
-    <property name="scala-compiler.jar" value="${scala.home}/lib/scala-compiler.jar" />
-    <property name="scala-library.jar" value="${scala.home}/lib/scala-library.jar" />
-    <path id="scala.classpath">
-        <pathelement location="${scala-compiler.jar}" />
-        <pathelement location="${scala-library.jar}" />
-    </path>
-    <taskdef resource="scala/tools/ant/antlib.xml">
-        <classpath refid="scala.classpath" />
-    </taskdef>
-    
-    <target name="init">
-        <mkdir dir="${build.dir}" />
-        <mkdir dir="${test.build.dir}" />
-    </target>
 
-    <target name="compile" depends="init">
-        <scalac srcdir="${source.dir}" destdir="${build.dir}" force="changed" deprecation="on">
-            <classpath>
-                <path refid="scala.classpath" />
-            </classpath>
-            <include name="**/*.scala" />
-        </scalac>
-    </target>
+    <property name="project.package" value="net/lag/configgy" />
+    <property name="project.test.classname" value="net.lag.TestRunner" />
 
-    <!-- scalatests doesn't work with scala 2.6.2 yet, so gotta wait.. -->
-    <target name="compile-tests" depends="compile">
-        <scalac srcdir="${test.source.dir}" destdir="${test.build.dir}" force="changed">
-            <classpath>
-                <path refid="scala.classpath" />
-                <pathelement location="${build.dir}" />
-            </classpath>
-            <include name="**/*.scala" />
-        </scalac>
-    </target>
-    
-    <target name="test" depends="compile-tests">
-       <java classname="scala.tools.nsc.MainGenericRunner" fork="true" failonerror="true">
-           <classpath>
-               <path refid="scala.classpath" />
-               <pathelement location="${build.dir}" />
-               <pathelement location="${test.build.dir}" />
-           </classpath>
-           <arg line="net.lag.TestRunner" />
-       </java>
-    </target>
-
-    <target name="jar" depends="test">
-        <jar destfile="configgy-${version}.jar">
-            <fileset dir="${build.dir}" />
-        </jar>
-    </target>
-    
-    <target name="docs">
-        <delete dir="${docs.dir}" />
-        <mkdir dir="${docs.dir}" />
-        <scaladoc srcdir="src" destdir="${docs.dir}" doctitle="Configgy" windowtitle="Configgy">
-            <classpath refid="scala.classpath" />
-        </scaladoc>
-    </target>
-    
-    <target name="install" depends="jar,docs" />
-
-    <target name="clean" depends="init">
-        <delete dir="${build.dir}" />
-        <delete dir="${test.build.dir}" />
-        <delete dir="target" />
-    </target>
-
+    <import file="ivy/bootstrap.xml" />
 </project>

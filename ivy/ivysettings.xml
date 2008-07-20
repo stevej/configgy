@@ -1,0 +1,13 @@
+<ivysettings>
+    <settings defaultResolver="chain-repos" />
+    <resolvers>
+        <chain name="chain-repos">
+            <url name="scala-tools.org" m2compatible="true">
+                <artifact pattern="http://scala-tools.org/repo-releases/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
+            </url>
+            <url name="lag.net" m2compatible="true">
+                <artifact pattern="http://www.lag.net/repo/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
+            </url>
+        </chain>
+    </resolvers>
+</ivysettings>
