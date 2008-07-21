@@ -84,8 +84,6 @@
         <sequential>
             <java classname="scala.tools.nsc.MainGenericRunner" fork="true" failonerror="true">
                 <classpath>
-                    <!-- i guess scala-compiler.jar is needed for MainGenericRunner -->
-                    <path refid="bootstrap.path" />
                     <path refid="test.path" />
                     <pathelement location="${target.dir}" />
                     <pathelement location="${test.target.dir}" />
@@ -115,19 +113,19 @@
         </sequential>
     </macrodef>
     
-    <target name="make-non-executable-jar" unless="project.jar.classname">
+    <target name="make-non-executable-jar" unless="ivy.extra.jarclassname">
         <jar destfile="${dist.dir}/${ivy.module}-${ivy.revision}.jar">
             <fileset dir="${target.dir}" />
         </jar>
     </target>
     
     <!-- generate a jar that contains all deps inside it, so it can be run with "java -jar" -->
-    <target name="make-executable-jar" if="project.jar.classname">
+    <target name="make-executable-jar" if="ivy.extra.jarclassname">
         <copy-deps-into-dist />
         <jar destfile="${dist.dir}/${ivy.module}-${ivy.revision}.jar">
             <fileset dir="${target.dir}" />
             <manifest>
-                <attribute name="Main-Class" value="${project.jar.classname}" />
+                <attribute name="Main-Class" value="${ivy.extra.jarclassname}" />
                 <attribute name="Class-Path" value="${deps.path.jar-format}" />
             </manifest>
         </jar>
