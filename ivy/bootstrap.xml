@@ -11,10 +11,11 @@
     
     <property environment="env" />
     
-    <property name="ivy.install.version" value="2.0.0-beta1" />
+    <property name="ivy.install.version" value="2.0.0-beta2" />
     <property name="ivy.jar.dir" value="${basedir}/target/ivy" />
     <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
     <property name="ivy.distrib.dir" value="${dist.dir}" />
+    <property name="ivy.deliver.ivy.pattern" value="${dist.dir}/[artifact]-[revision].[ext]" />
     
     <!--
         download ivy from the web site so that it can be used without being

@@ -18,6 +18,7 @@
     </target>
     
     <target name="prepare" depends="resolve,init" description="bootstrap ivy and scala and prepare to compile">
+        <ivy:info file="${ivy.dep.file}" />
         <taskdef resource="scala/tools/ant/antlib.xml" classpathref="bootstrap.path" />
     </target>
 
@@ -35,26 +36,25 @@
             </scalac>
         </sequential>
     </macrodef>
+    
+    <target name="compile-scala-source">
+        <compile-scala-source />
+    </target>
 
     <tstamp>
         <format property="build.timestamp" pattern="yyyyMMdd-HHmmss" />
     </tstamp>
     
     <!-- create properties file with build info -->
-    <macrodef name="write-build-info">
-        <sequential>
-            <propertyfile file="${target.dir}/${project.package}/build.properties">
-                <entry key="name" value="${ivy.module}" />
-                <entry key="version" value="${ivy.revision}" />
-                <entry key="build_name" value="${build.timestamp}" />
-            </propertyfile>
-        </sequential>
-    </macrodef>
-
-    <target name="compile" depends="prepare" description="compile scala code">
-        <compile-scala-source />
-        <write-build-info />
+    <target name="write-build-info" if="ivy.extra.buildpackage">
+        <propertyfile file="${target.dir}/${ivy.extra.buildpackage}/build.properties">
+            <entry key="name" value="${ivy.module}" />
+            <entry key="version" value="${ivy.revision}" />
+            <entry key="build_name" value="${build.timestamp}" />
+        </propertyfile>
     </target>
+
+    <target name="compile" depends="prepare,compile-scala-source,write-build-info" description="compile scala code" />
 
     <macrodef name="compile-scala-tests">
         <element name="extra-classpath" optional="true" description="items for the classpath that aren't in ivy.xml" />
@@ -98,7 +98,7 @@
     </macrodef>
     
     <target name="test" unless="skip.tests" depends="compile-tests" description="run tests">
-        <run-tests classname="${project.test.classname}" />
+        <run-tests classname="${ivy.extra.testclass}" />
     </target>
     
     <macrodef name="copy-deps-into-dist">
@@ -143,7 +143,7 @@
     
     <target name="install" depends="test,make-non-executable-jar,make-executable-jar,docs" description="build complete jar(s) and docs">
         <ivy:makepom ivyfile="${basedir}/ivy/ivy.xml" pomfile="${dist.dir}/${ivy.module}-${ivy.revision}.pom" />
-        <copy file="${basedir}/ivy/ivy.xml" todir="${dist.dir}" />
+        <ivy:deliver conf="*(public)" />
     </target>
 
     <target name="package" depends="install">

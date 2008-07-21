@@ -1,5 +1,10 @@
-<ivy-module version="2.0">
-    <info organisation="net.lag" module="configgy" revision="1.1" />
+<ivy-module version="1.0" xmlns:e="http://ant.apache.org/ivy/extra">
+    <info organisation="net.lag"
+        module="configgy"
+        revision="1.1"
+        e:testclass="net.lag.TestRunner"
+        e:buildpackage="net/lag/configgy"
+    />
     
     <configurations>
         <conf name="bootstrap" visibility="private" description="load scala compiler and libraries" />

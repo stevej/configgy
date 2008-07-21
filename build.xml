@@ -2,8 +2,5 @@
 <project name="configgy" default="install" xmlns:ivy="antlib:org.apache.ivy.ant">
     <description> Simple configuration and logging for scala. </description>
 
-    <property name="project.package" value="net/lag/configgy" />
-    <property name="project.test.classname" value="net.lag.TestRunner" />
-
     <import file="ivy/bootstrap.xml" />
 </project>
