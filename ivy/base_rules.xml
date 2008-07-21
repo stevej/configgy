@@ -147,6 +147,9 @@
     </target>
 
     <target name="package" depends="install">
+        <ivy:publish resolver="push" overwrite="true">
+            <artifacts pattern="${dist.dir}/[artifact]-[revision].[ext]" />
+        </ivy:publish>
         <copy file="INSTALL" todir="${dist.dir}" failonerror="false" />
         <copy file="LICENSE" todir="${dist.dir}" failonerror="false" />
         <copy file="README" todir="${dist.dir}" failonerror="false" />

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="configgy" default="install" basedir=".">
+<project name="configgy" default="install" xmlns:ivy="antlib:org.apache.ivy.ant">
     <description> Simple configuration and logging for scala. </description>
 
     <property name="project.package" value="net/lag/configgy" />
