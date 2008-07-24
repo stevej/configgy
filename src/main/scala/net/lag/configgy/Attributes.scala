@@ -255,7 +255,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             }
         }
 
-        s.regexSub(INTERPOLATE_RE, m => {
+        s.regexSub(INTERPOLATE_RE) { m =>
             if (m.matched == "\\$") {
                 "$"
             } else if (config == null) {
@@ -263,7 +263,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
             } else {
                 lookup(m.group(0), List(this, config, EnvironmentAttributes))
             }
-        })
+        }
     }
 
     protected[configgy] def interpolate(key: String, s: String): String = {

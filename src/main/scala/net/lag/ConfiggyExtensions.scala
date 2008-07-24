@@ -21,7 +21,7 @@ final class ConfiggyString(wrapped: String) {
      *
      * <p> For example, this call:
      *
-     * <p><code> "ohio".regexSub("""h.""".r, m => "n") </code>
+     * <p><code> "ohio".regexSub("""h.""".r) { m => "n" } </code>
      *
      * <p> will return the string <code>"ono"</code>.
      *
@@ -34,7 +34,7 @@ final class ConfiggyString(wrapped: String) {
      *     returns a string to substitute
      * @return the resulting string with replacements made
      */
-    def regexSub(re: Regex, replace: (Regex.MatchData => String)): String = {
+    def regexSub(re: Regex)(replace: (Regex.MatchData => String)): String = {
         var offset = 0
         var out = new StringBuilder
 
@@ -66,7 +66,7 @@ final class ConfiggyString(wrapped: String) {
      * @return a quoted string, suitable for ASCII display
      */
     def quoteC: String = {
-        regexSub(QUOTE_RE, m => {
+        regexSub(QUOTE_RE) { m =>
             m.matched.charAt(0) match {
                 case '\r' => "\\r"
                 case '\n' => "\\n"
@@ -81,7 +81,7 @@ final class ConfiggyString(wrapped: String) {
                     }
                 }
             }
-        })
+        }
     }
 
     // we intentionally don't unquote "\$" here, so it can be used to escape interpolation later.
@@ -97,7 +97,7 @@ final class ConfiggyString(wrapped: String) {
      * @return an unquoted unicode string
      */
     def unquoteC = {
-        regexSub(UNQUOTE_RE, m => {
+        regexSub(UNQUOTE_RE) { m =>
             val ch = m.group(0).charAt(0) match {
                 // holy crap! this is terrible:
                 case 'u' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
@@ -108,7 +108,7 @@ final class ConfiggyString(wrapped: String) {
                 case x => x
             }
             ch.toString
-        })
+        }
     }
 }
 
