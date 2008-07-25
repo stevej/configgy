@@ -159,13 +159,33 @@
         </jar>
     </target>
     
-    <target name="docs" depends="prepare">
-        <delete dir="${docs.target.dir}" />
-        <mkdir dir="${docs.target.dir}" />
-        <scaladoc srcdir="${source.dir}" destdir="${docs.target.dir}" doctitle="${ivy.module}" windowtitle="${ivy.module}">
-            <classpath refid="deps.path" />
-        </scaladoc>
+    <target name="vscaladoc" depends="prepare">
+        <delete dir="${docs.target.dir}/scaladoc" />
+        <mkdir dir="${docs.target.dir}/scaladoc" />
+        <pathconvert property="doc.sources" pathsep=" ">
+            <fileset dir="${source.dir}" includes="**/*.scala" />
+        </pathconvert>
+        <echo message="Building vscaladoc..." />
+        <java classname="org.scala_tools.vscaladoc.Main" fork="true" failonerror="true">
+            <classpath>
+                <path refid="bootstrap.path" />
+            </classpath>
+            <arg value="-classpath" />
+            <arg pathref="bootstrap.path" />
+            <arg value="-d" />
+            <arg value="${docs.target.dir}/scaladoc" />
+            <arg value="-sourcepath" />
+            <arg value="${source.dir}" />
+            <arg value="-windowtitle" />
+            <arg value="${ivy.module} ${ivy.revision}" />
+            <arg value="-doctitle" />
+            <arg value="${ivy.module} ${ivy.revision}" />
+            <arg value="-linksource" />
+            <arg line="${doc.sources}" />
+        </java>
     </target>
+    
+    <target name="docs" depends="prepare,vscaladoc" />
     
     <target name="install" depends="test,make-non-executable-jar,make-executable-jar,docs" description="build complete jar(s) and docs">
         <ivy:makepom ivyfile="${basedir}/ivy/ivy.xml" pomfile="${dist.dir}/${ivy.module}-${ivy.revision}.pom" />
