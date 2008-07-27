@@ -3,7 +3,7 @@ package net.lag.logging
 import java.util.{logging => javalog}
 import java.net.{DatagramPacket, DatagramSocket, InetAddress, InetSocketAddress, SocketAddress}
 import java.text.SimpleDateFormat
-import net.lag.ConfiggyExtensions._
+import net.lag.extensions._
 
 
 object Syslog {

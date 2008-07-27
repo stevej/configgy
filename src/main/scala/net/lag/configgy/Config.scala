@@ -3,7 +3,7 @@ package net.lag.configgy
 import java.io.File
 import scala.collection.{Map, Set}
 import scala.collection.{immutable, mutable}
-import net.lag.ConfiggyExtensions._
+import net.lag.extensions._
 
 
 private abstract class Phase

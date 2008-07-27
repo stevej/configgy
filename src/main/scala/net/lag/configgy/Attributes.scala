@@ -2,7 +2,7 @@ package net.lag.configgy
 
 import java.util.regex.Pattern
 import scala.collection.{immutable, mutable, Map}
-import net.lag.ConfiggyExtensions._
+import net.lag.extensions._
 
 
 class AttributesException(reason: String) extends Exception(reason)

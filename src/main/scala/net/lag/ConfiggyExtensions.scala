@@ -4,7 +4,7 @@ import scala.util.matching.Regex
 
 
 final class ConfiggyString(wrapped: String) {
-    import ConfiggyExtensions._
+    import extensions._
 
     /**
      * Scala does not yet (Dec 2007) support java's String.format natively.
@@ -132,7 +132,7 @@ final class ConfiggyByteArray(wrapped: Array[Byte]) {
 }
 
 
-object ConfiggyExtensions {
+object extensions {
     implicit def stringToConfiggyString(s: String): ConfiggyString = new ConfiggyString(s)
     implicit def byteArrayToConfiggyByteArray(b: Array[Byte]): ConfiggyByteArray = new ConfiggyByteArray(b)
 }

@@ -2,7 +2,7 @@ package net.lag.logging
 
 import java.util.{logging => javalog}
 import scala.collection.mutable
-import net.lag.ConfiggyExtensions._
+import net.lag.extensions._
 
 
 /**

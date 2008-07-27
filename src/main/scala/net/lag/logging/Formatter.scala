@@ -3,7 +3,7 @@ package net.lag.logging
 import java.text.SimpleDateFormat
 import java.util.{Date, GregorianCalendar, TimeZone, logging => javalog}
 import scala.collection.mutable
-import net.lag.ConfiggyExtensions._
+import net.lag.extensions._
 
 
 object Formatter {
