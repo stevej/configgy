@@ -2,7 +2,8 @@ package net.lag.configgy
 
 import scala.collection.mutable.Stack
 import scala.util.parsing.combinator._
-import scala.util.parsing.combinator.syntactical.TokenParsers
+import scala.util.parsing.input.CharSequenceReader
+import net.lag.extensions._
 
 
 /**
@@ -13,24 +14,32 @@ import scala.util.parsing.combinator.syntactical.TokenParsers
 class ParseException(reason: String) extends Exception(reason)
 
 
-private[configgy] class ConfigParser(var attr: Attributes, val importer: Importer) extends TokenParsers {
-    type Tokens = ConfigLexer
-    val lexical = new Tokens
-
-    import lexical.{Assign, CloseTag, Delim, Ident, Keyword, Number, OpenTag, QuotedString, TagAttribute}
+private[configgy] class ConfigParser(var attr: Attributes, val importer: Importer) extends RegexParsers {
 
     val sections = new Stack[String]
     var prefix = ""
 
 
-    def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose)
+    // tokens
+    override val whiteSpace = """(\s+|#[^\n]*\n)+""".r
+    val numberToken: Parser[String] = """-?\d+(\.\d+)?""".r
+    val stringToken: Parser[String] = """([^\\\"]|\\[^ux]|\\\n|\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F]{2})*""".r
+    val identToken: Parser[String] = """([a-zA-Z_][-\w]*)(\.[a-zA-Z_][-\w]*)*""".r
+    val assignToken: Parser[String] = """=|\?=""".r
+    val tagNameToken: Parser[String] = """[a-zA-Z][-\w]*""".r
 
-    def value = number | string | stringList | onoff | trueFalse
-    def number = accept("number", { case Number(x) => if (x.contains('.')) x else Integer.parseInt(x) })
-    def string = accept("string", { case QuotedString(x) => attr.interpolate(prefix, x) })
-    def stringList = accept(Delim("[")) ~> repsep(string, Delim(",")) <~ accept(Delim("]")) ^^ { list => list.toArray }
 
-    def assignment = assignName ~ accept("operation", { case Assign(x) => x }) ~ value ^^ {
+    // the (~ "") is to workaround a bug where RegexParser can't handle trailing whitespace
+    // FIXME: file a bug against scala so they can fix this.
+    def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose) ~ ""
+
+    def includeFile = "include" ~> string ^^ {
+        case filename: String => {
+            new ConfigParser(attr.makeAttributes(sections.mkString(".")), importer) parse importer.importFile(filename)
+        }
+    }
+
+    def assignment = identToken ~ assignToken ~ value ^^ {
         case k ~ a ~ v => if (a match {
             case "=" => true
             case "?=" => ! attr.contains(prefix + k)
@@ -41,54 +50,45 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
             case x: Boolean => attr(prefix + k) = x
         }
     }
-    def toggle = assignName ~ (onoff | trueFalse) ^^ { case k ~ v => attr(prefix + k) = v }
-    def assignName = accept("key", { case Ident(x) => x })
-    def onoff = accept("on/off", {
-        case Ident("on") => true
-        case Ident("off") => false
-    })
-    def trueFalse = accept("true/false", {
-        case Ident("true") => true
-        case Ident("false") => false
-    })
 
-    def sectionOpen = accept("open tag", { case x @ OpenTag(name, attrList) => x }) ^^ {
-        case OpenTag(name, attrList) => {
+    def toggle = identToken ~ trueFalse ^^ { case k ~ v => attr(prefix + k) = v }
+
+    def sectionOpen = "<" ~> tagNameToken ~ rep(tagAttribute) <~ ">" ^^ {
+        case name ~ attrList =>
             sections += name
             prefix = sections.mkString("", ".", ".")
             val newBlock = attr.makeAttributes(sections.mkString("."))
-            for (a <- attrList) a match {
-                case TagAttribute("inherit", blockName) => newBlock inheritFrom attr.makeAttributes(blockName)
+            for ((k, v) <- attrList) k match {
+                case "inherit" => newBlock inheritFrom attr.makeAttributes(v)
                 case _ => throw new ParseException("Unknown block modifier")
             }
-        }
     }
+    def tagAttribute = opt(whiteSpace) ~> (tagNameToken <~ "=") ~ string ^^ { case k ~ v => (k, v) }
 
-    def sectionClose = accept("close tag", { case CloseTag(x) => x }) ^^ {
-        case x: String => {
-            if (sections.isEmpty) {
-                failure("dangling close tag: " + x)
+    def sectionClose = "</" ~> tagNameToken <~ ">" ^^ { x =>
+        if (sections.isEmpty) {
+            failure("dangling close tag: " + x)
+        } else {
+            val last = sections.pop
+            if (last != x) {
+                failure("got closing tag for " + x + ", expected " + last)
             } else {
-                val last = sections.pop
-                if (last != x) {
-                    failure("got closing tag for " + x + ", expected " + last)
-                } else {
-                    prefix = sections.mkString(".")
-                }
+                prefix = sections.mkString(".")
             }
         }
     }
 
-    def includeFile = accept(Keyword("include")) ~> string ^^ {
-        case filename: String => {
-            new ConfigParser(attr.makeAttributes(sections.mkString(".")), importer) parse importer.importFile(filename)
-        }
-    }
+    def value: Parser[Any] = number | string | stringList | trueFalse
+    def number = numberToken ^^ { x => if (x.contains('.')) x else x.toInt }
+    def string = "\"" ~> stringToken <~ "\"" ^^ { s => attr.interpolate(prefix, s.unquoteC) }
+    def stringList = "[" ~> repsep(string, ",") <~ "]" ^^ { list => list.toArray }
+    def trueFalse: Parser[Boolean] = ("(true|on)".r ^^ { x => true }) | ("(false|off)".r ^^ { x => false })
+
 
     def parse(in: String): Unit = {
-        phrase(root)(new lexical.Scanner(in)) match {
+        parseAll(root, in) match {
             case Success(result, _) => result
-            case x @ Failure(msg, _) => throw new ParseException(x.toString)
+            case x @ Failure(msg, z) => throw new ParseException(x.toString)
             case x @ Error(msg, _) => throw new ParseException(x.toString)
         }
     }

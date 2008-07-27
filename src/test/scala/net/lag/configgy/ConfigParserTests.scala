@@ -113,6 +113,12 @@ object ConfigParserTests extends Tests {
         }
     }
 
+    test("comments are ignored") {
+        expect("{: weight=\"48\" }") {
+            parse("# doing stuff\n  weight = 48\n  # more comments\n").toString
+        }
+    }
+
     test("bool")  {
         expect("{: whiskey=\"true\" wine=\"false\" }") {
             parse("wine off\nwhiskey on\n").toString

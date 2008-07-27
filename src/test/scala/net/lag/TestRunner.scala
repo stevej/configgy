@@ -13,7 +13,6 @@ object TestRunner {
         val results = new TestResult
 
         val suite = new TestSuite(ConfiggyExtensionsTests,
-                                  ConfigLexerTests,
                                   AttributesTests,
                                   ConfigParserTests,
                                   ConfigTests,
