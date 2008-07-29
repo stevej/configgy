@@ -69,8 +69,8 @@ object LoggingSpec extends Specification with TestHelper {
     // turn logged console lines into a list of repeatable strings
     private def eat(in: String): List[String] = {
         for (val line <- in.split("\n").toList) yield {
-            line.regexSub("""LoggingTests.scala:\d+""".r) {
-                m => "LoggingTests.scala:NNN" }
+            line.regexSub("""LoggingSpec.scala:\d+""".r) {
+                m => "LoggingSpec.scala:NNN" }
             }.regexSub("""LoggingSpec\$[\w\$]+""".r) {
                 m => "LoggingSpec$$"
             }
@@ -166,11 +166,11 @@ object LoggingSpec extends Specification with TestHelper {
             eat(handler.toString) mustEqual
                 List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                      "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: Aie!",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
                      "ERR [20080328-22:53:16.722] whiskey:     (...more...)")
         }
 
@@ -186,12 +186,12 @@ object LoggingSpec extends Specification with TestHelper {
             eat(handler.toString) mustEqual
                 List("ERR [20080328-22:53:16.722] whiskey: Exception!",
                      "ERR [20080328-22:53:16.722] whiskey: java.lang.Exception: grrrr",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingTests.scala:NNN)",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingSpec$$.apply(LoggingTests.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle2(LoggingSpec.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.LoggingSpec$$.apply(LoggingSpec.scala:NNN)",
                      "ERR [20080328-22:53:16.722] whiskey:     (...more...)",
                      "ERR [20080328-22:53:16.722] whiskey: Caused by java.lang.Exception: Aie!",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
-                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingTests.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
+                     "ERR [20080328-22:53:16.722] whiskey:     at net.lag.logging.Crazy$.cycle(LoggingSpec.scala:NNN)",
                      "ERR [20080328-22:53:16.722] whiskey:     (...more...)")
         }
 
