@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import net.lag.extensions._
 
 
-object Syslog {
+private[logging] object Syslog {
     val DEFAULT_PORT = 514
 
     val PRIORITY_USER = 8

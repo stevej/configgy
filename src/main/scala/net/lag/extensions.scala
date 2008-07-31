@@ -65,7 +65,7 @@ final class ConfiggyString(wrapped: String) {
      *
      * @return a quoted string, suitable for ASCII display
      */
-    def quoteC: String = {
+    def quoteC(): String = {
         regexSub(QUOTE_RE) { m =>
             m.matched.charAt(0) match {
                 case '\r' => "\\r"
@@ -96,7 +96,7 @@ final class ConfiggyString(wrapped: String) {
      *
      * @return an unquoted unicode string
      */
-    def unquoteC = {
+    def unquoteC() = {
         regexSub(UNQUOTE_RE) { m =>
             val ch = m.group(0).charAt(0) match {
                 // holy crap! this is terrible:
@@ -117,7 +117,7 @@ final class ConfiggyByteArray(wrapped: Array[Byte]) {
     /**
      * Turn an Array[Byte] into a string of hex digits.
      */
-    def hexlify: String = {
+    def hexlify(): String = {
         val out = new StringBuffer
         for (val b <- wrapped) {
             val s = b.toInt.toHexString

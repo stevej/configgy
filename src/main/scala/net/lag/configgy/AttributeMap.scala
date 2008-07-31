@@ -79,7 +79,7 @@ trait AttributeMap {
      * and values from this AttributeMap. Keys from nested maps will be
      * compound (like <code>"inner.name"</code>).
      */
-    def asMap: Map[String, String]
+    def asMap(): Map[String, String]
 
     /**
      * Subscribe to changes on this map. Any changes (including deletions)

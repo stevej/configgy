@@ -26,7 +26,7 @@ private class SubscriptionNode {
         }
     }
 
-    override def toString = {
+    override def toString() = {
         val out = new StringBuilder("%d" format subscribers.size)
         if (map.size > 0) {
             out.append(" { ")
@@ -104,6 +104,7 @@ class Config extends AttributeMap {
      * directory.
      */
     var importer: Importer = new FilesystemImporter(new File(".").getCanonicalPath)
+
 
     /**
      * Read config data from a string and use it to populate this object.
@@ -188,7 +189,7 @@ class Config extends AttributeMap {
     /**
      * Return a formatted string of all the subscribers, useful for debugging.
      */
-    def debugSubscribers = synchronized {
+    def debugSubscribers() = synchronized {
         "subs=" + subscribers.toString
     }
 
@@ -237,5 +238,5 @@ class Config extends AttributeMap {
     def contains(key: String): Boolean = root.contains(key)
     def remove(key: String): Boolean = root.remove(key)
     def keys: Iterator[String] = root.keys
-    def asMap: Map[String, String] = root.asMap
+    def asMap(): Map[String, String] = root.asMap
 }

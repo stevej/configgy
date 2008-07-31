@@ -6,7 +6,7 @@ import scala.collection.mutable
 import net.lag.extensions._
 
 
-object Formatter {
+private[logging] object Formatter {
     // FIXME: might be nice to unmangle some scala names here.
     private[logging] def formatStackTrace(t: Throwable, limit: Int): mutable.ArrayBuffer[String] = {
         var out = new mutable.ArrayBuffer[String]

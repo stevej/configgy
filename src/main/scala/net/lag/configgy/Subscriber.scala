@@ -56,7 +56,7 @@ class SubscriptionKey private[configgy](val config: Config, private[configgy] va
      * Remove the subscription referenced by this key. After unsubscribing,
      * no more validate/commit events will be sent to this subscriber.
      */
-    def unsubscribe = config.unsubscribe(this)
+    def unsubscribe() = config.unsubscribe(this)
 }
 
 
