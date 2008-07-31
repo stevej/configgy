@@ -393,7 +393,7 @@ To access a logger from within a class or object, you can usually just use::
 This creates a ``Logger`` object that uses the current class or object's
 package name as the logging node, so class "com.example.foo.Lamp" will log to
 node "com.example.foo" (generally showing "foo" as the name in the logfile).
-You can also get a logger explicitly by name:
+You can also get a logger explicitly by name::
 
     private val log = Logger.get("com.example.foo")
 
