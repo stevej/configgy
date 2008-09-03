@@ -1,14 +1,9 @@
 package net.lag
 
-
 import java.io.File
-import scala.testing.SUnit._
-
-import net.lag.configgy._
-import net.lag.logging._
-
 
 import org.specs.runner.SpecsFileRunner
+
 
 object TestRunner extends SpecsFileRunner("src/test/scala/**/*.scala", ".*")
 
