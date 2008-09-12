@@ -88,6 +88,15 @@ object LoggingSpec extends Specification with TestHelper {
             Logger.clearHandlers
         }
 
+        "provide level name and value maps" in {
+            Logger.levels mustEqual Map(TRACE.value -> TRACE, DEBUG.value -> DEBUG,
+                INFO.value -> INFO, WARNING.value -> WARNING, ERROR.value -> ERROR,
+                CRITICAL.value -> CRITICAL, FATAL.value -> FATAL)
+            Logger.levelNames mustEqual Map("TRACE" -> TRACE, "DEBUG" -> DEBUG,
+                "INFO" -> INFO, "WARNING" -> WARNING, "ERROR" -> ERROR,
+                "CRITICAL" -> CRITICAL, "FATAL" -> FATAL)
+        }
+
         "perform basic logging" in {
             val log = Logger("")
             log.error("error!")

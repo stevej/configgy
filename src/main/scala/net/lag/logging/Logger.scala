@@ -2,6 +2,7 @@ package net.lag.logging
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date, logging => javalog}
+import scala.collection.Map
 import scala.collection.mutable
 import net.lag.extensions._
 import net.lag.configgy.{AttributesException, AttributeMap}
@@ -201,6 +202,16 @@ object Logger {
     root.setLevel(TRACE)
     reset
 
+
+    /**
+     * Return a map of log level values to the corresponding Level objects.
+     */
+    def levels: Map[Int, Level] = levelsMap.readOnly
+
+    /**
+     * Return a map of log level names to the corresponding Level objects.
+     */
+    def levelNames: Map[String, Level] = levelNamesMap.readOnly
 
     /**
      * Reset logging to an initial state, where all logging is set at
