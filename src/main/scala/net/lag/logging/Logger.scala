@@ -2,6 +2,7 @@ package net.lag.logging
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date, logging => javalog}
+import scala.collection.Map
 import scala.collection.mutable
 import net.lag.extensions._
 import net.lag.configgy.{AttributesException, AttributeMap}
@@ -12,6 +13,7 @@ sealed case class Level(name: String, value: Int) extends javalog.Level(name, va
     Logger.levelNamesMap(name) = this
     Logger.levelsMap(value) = this
 }
+case object OFF extends Level("OFF", Math.MAX_INT)
 case object FATAL extends Level("FATAL", 1000)
 case object CRITICAL extends Level("CRITICAL", 970)
 case object ERROR extends Level("ERROR", 930)
@@ -19,6 +21,7 @@ case object WARNING extends Level("WARNING", 900)
 case object INFO extends Level("INFO", 800)
 case object DEBUG extends Level("DEBUG", 500)
 case object TRACE extends Level("TRACE", 400)
+case object ALL extends Level("ALL", Math.MIN_INT)
 
 
 class LoggingException(reason: String) extends Exception(reason)
@@ -153,14 +156,41 @@ object Logger {
     // clear out some cruft from the java root logger.
     private val javaRoot = javalog.Logger.getLogger("")
 
-    // convenience methods:
+
+    // ----- convenience methods:
+
+    /** OFF is used to turn off logging entirely. */
+    def OFF = logging.OFF
+
+    /** Describes an event which will cause the application to exit immediately, in failure. */
     def FATAL = logging.FATAL
+
+    /** Describes an event which will cause the application to fail to work correctly, but
+     *  keep attempt to continue. The application may be unusable.
+     */
     def CRITICAL = logging.CRITICAL
+
+    /** Describes a user-visible error that may be transient or not affect other users. */
     def ERROR = logging.ERROR
+
+    /** Describes a problem which is probably not user-visible but is notable and/or may be
+     *  an early indication of a future error.
+     */
     def WARNING = logging.WARNING
+
+    /** Describes information about the normal, functioning state of the application. */
     def INFO = logging.INFO
+
+    /** Describes information useful for general debugging, but probably not normal,
+     *  day-to-day use.
+     */
     def DEBUG = logging.DEBUG
+
+    /** Describes information useful for intense debugging. */
     def TRACE = logging.TRACE
+
+    /** ALL is used to log everything. */
+    def ALL = logging.ALL
 
     // to force them to get loaded from class files:
     root.setLevel(FATAL)
@@ -172,6 +202,16 @@ object Logger {
     root.setLevel(TRACE)
     reset
 
+
+    /**
+     * Return a map of log level values to the corresponding Level objects.
+     */
+    def levels: Map[Int, Level] = levelsMap.readOnly
+
+    /**
+     * Return a map of log level names to the corresponding Level objects.
+     */
+    def levelNames: Map[String, Level] = levelNamesMap.readOnly
 
     /**
      * Reset logging to an initial state, where all logging is set at

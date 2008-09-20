@@ -34,7 +34,7 @@ object AttributesSpec extends Specification {
             s("unknown", "500") mustEqual "500"
         }
 
-        "set comound values" in {
+        "set compound values" in {
             val s = new Attributes(null, "")
             s("name") = "Communist"
             s("age") = 8
