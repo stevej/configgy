@@ -16,34 +16,34 @@ package net.lag.configgy;
  * the change has been validated and is being committed.
  */
 trait Subscriber {
-    /**
-     * Validate a potential change to the subscribed config node. It the node
-     * didn't exist prior to this potential change, <code>current</code> will
-     * be <code>None</code>. Similarly, if the node is being removed by this
-     * change, <code>replacement</code> will be <code>None</code>. Never will
-     * both parameters be <code>None</code>.
-     *
-     * <p> To reject the change, throw <code>ValidationException</code>. A
-     * normal return validates the config change and potentially permits it to
-     * be committed.
-     *
-     * @param current the current config node, if it exists
-     * @param replacement the new config node, if it will exist
-     */
-    @throws(classOf[ValidationException])
-    def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit
+  /**
+   * Validate a potential change to the subscribed config node. It the node
+   * didn't exist prior to this potential change, <code>current</code> will
+   * be <code>None</code>. Similarly, if the node is being removed by this
+   * change, <code>replacement</code> will be <code>None</code>. Never will
+   * both parameters be <code>None</code>.
+   *
+   * <p> To reject the change, throw <code>ValidationException</code>. A
+   * normal return validates the config change and potentially permits it to
+   * be committed.
+   *
+   * @param current the current config node, if it exists
+   * @param replacement the new config node, if it will exist
+   */
+  @throws(classOf[ValidationException])
+  def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit
 
-    /**
-     * Commit this change to the subscribed config node. If this method is
-     * called, a prior call to <code>validate</code> with these parameters
-     * succeeded for all subscribers, and the change is now active. As with
-     * <code>validate</code>, either <code>current</code> or
-     * <code>replacement</code> (but not both) may be <code>None</code>.
-     *
-     * @param current the current (now previous) config node, if it existed
-     * @param replacement the new (now current) config node, if it exists
-     */
-    def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit
+  /**
+   * Commit this change to the subscribed config node. If this method is
+   * called, a prior call to <code>validate</code> with these parameters
+   * succeeded for all subscribers, and the change is now active. As with
+   * <code>validate</code>, either <code>current</code> or
+   * <code>replacement</code> (but not both) may be <code>None</code>.
+   *
+   * @param current the current (now previous) config node, if it existed
+   * @param replacement the new (now current) config node, if it exists
+   */
+  def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit
 }
 
 
@@ -52,11 +52,11 @@ trait Subscriber {
  * be used to unsubscribe from config change events.
  */
 class SubscriptionKey private[configgy](val config: Config, private[configgy] val id: Int) {
-    /**
-     * Remove the subscription referenced by this key. After unsubscribing,
-     * no more validate/commit events will be sent to this subscriber.
-     */
-    def unsubscribe() = config.unsubscribe(this)
+  /**
+   * Remove the subscription referenced by this key. After unsubscribing,
+   * no more validate/commit events will be sent to this subscriber.
+   */
+  def unsubscribe() = config.unsubscribe(this)
 }
 
 
