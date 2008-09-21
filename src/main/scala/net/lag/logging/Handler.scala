@@ -11,57 +11,57 @@ import net.lag.extensions._
  */
 abstract class Handler(_formatter: Formatter) extends javalog.Handler {
 
-    setFormatter(_formatter)
+  setFormatter(_formatter)
 
 
-    /**
-     * Where to truncate log messages (character count). 0 = don't truncate.
-     */
-    def truncateAt = formatter.truncateAt
+  /**
+   * Where to truncate log messages (character count). 0 = don't truncate.
+   */
+  def truncateAt = formatter.truncateAt
 
-    /**
-     * Where to truncate log messages (character count). 0 = don't truncate.
-     */
-    def truncateAt_=(n: Int) = {
-        formatter.truncateAt = n
-    }
+  /**
+   * Where to truncate log messages (character count). 0 = don't truncate.
+   */
+  def truncateAt_=(n: Int) = {
+    formatter.truncateAt = n
+  }
 
-    /**
-     * Where to truncate stack traces in exception logging (line count).
-     */
-    def truncateStackTracesAt = formatter.truncateStackTracesAt
+  /**
+   * Where to truncate stack traces in exception logging (line count).
+   */
+  def truncateStackTracesAt = formatter.truncateStackTracesAt
 
-    /**
-     * Where to truncate stack traces in exception logging (line count).
-     */
-    def truncateStackTracesAt_=(n: Int) = {
-        formatter.truncateStackTracesAt = n
-    }
+  /**
+   * Where to truncate stack traces in exception logging (line count).
+   */
+  def truncateStackTracesAt_=(n: Int) = {
+    formatter.truncateStackTracesAt = n
+  }
 
-    /**
-     * Return <code>true</code> if dates in log messages are being reported
-     * in UTC time, or <code>false</code> if they're being reported in local
-     * time.
-     */
-    def useUtc = formatter.useUtc
+  /**
+   * Return <code>true</code> if dates in log messages are being reported
+   * in UTC time, or <code>false</code> if they're being reported in local
+   * time.
+   */
+  def useUtc = formatter.useUtc
 
-    /**
-     * Set whether dates in log messages should be reported in UTC time
-     * (<code>true</code>) or local time (<code>false</code>, the default).
-     * This variable and <code>timeZone</code> affect the same settings, so
-     * whichever is called last will take precedence.
-     */
-    def useUtc_=(utc: Boolean) = formatter.useUtc = utc
+  /**
+   * Set whether dates in log messages should be reported in UTC time
+   * (<code>true</code>) or local time (<code>false</code>, the default).
+   * This variable and <code>timeZone</code> affect the same settings, so
+   * whichever is called last will take precedence.
+   */
+  def useUtc_=(utc: Boolean) = formatter.useUtc = utc
 
-    /**
-     * Return the formatter associated with this log handler.
-     */
-    def formatter = getFormatter.asInstanceOf[Formatter]
+  /**
+   * Return the formatter associated with this log handler.
+   */
+  def formatter = getFormatter.asInstanceOf[Formatter]
 
-    override def toString = {
-        "<%s level=%s utc=%s truncate=%d truncate_stack=%d>".format(getClass.getName, getLevel,
-            if (useUtc) "true" else "false", truncateAt, truncateStackTracesAt)
-    }
+  override def toString = {
+    "<%s level=%s utc=%s truncate=%d truncate_stack=%d>".format(getClass.getName, getLevel,
+      if (useUtc) "true" else "false", truncateAt, truncateStackTracesAt)
+  }
 }
 
 
@@ -70,17 +70,17 @@ abstract class Handler(_formatter: Formatter) extends javalog.Handler {
  * string buffer.
  */
 class StringHandler(_formatter: Formatter) extends Handler(_formatter) {
-    private var buffer = new StringBuilder()
+  private var buffer = new StringBuilder()
 
-    def publish(record: javalog.LogRecord) = {
-        buffer append getFormatter().format(record)
-    }
+  def publish(record: javalog.LogRecord) = {
+    buffer append getFormatter().format(record)
+  }
 
-    def close() = { }
+  def close() = { }
 
-    def flush() = { }
+  def flush() = { }
 
-    override def toString = buffer.toString
+  override def toString = buffer.toString
 }
 
 
@@ -88,11 +88,11 @@ class StringHandler(_formatter: Formatter) extends Handler(_formatter) {
  * Log things to the console.
  */
 class ConsoleHandler(_formatter: Formatter) extends Handler(_formatter) {
-    def publish(record: javalog.LogRecord) = {
-        System.err.print(getFormatter().format(record))
-    }
+  def publish(record: javalog.LogRecord) = {
+    System.err.print(getFormatter().format(record))
+  }
 
-    def close() = { }
+  def close() = { }
 
-    def flush() = Console.flush
+  def flush() = Console.flush
 }
