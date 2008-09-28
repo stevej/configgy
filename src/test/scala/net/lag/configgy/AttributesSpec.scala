@@ -10,11 +10,11 @@ object AttributesSpec extends Specification {
     "set values" in {
       val s = new Attributes(null, "root")
       s.toString mustEqual "{root: }"
-      s.set("name", "Communist")
+      s.setString("name", "Communist")
       s.toString mustEqual "{root: name=\"Communist\" }"
-      s.set("age", 8)
+      s.setInt("age", 8)
       s.toString mustEqual "{root: age=\"8\" name=\"Communist\" }"
-      s.set("age", 19)
+      s.setInt("age", 19)
       s.toString mustEqual "{root: age=\"19\" name=\"Communist\" }"
     }
 
@@ -22,7 +22,7 @@ object AttributesSpec extends Specification {
       val s = new Attributes(null, "root")
       s("name") = "Communist"
       s("age") = 8
-      s.get("name", "") mustEqual "Communist"
+      s.getString("name", "") mustEqual "Communist"
       s.getInt("age", 999) mustEqual 8
       s.getInt("unknown", 500) mustEqual 500
       (s("name") match {
@@ -64,7 +64,7 @@ object AttributesSpec extends Specification {
       val s = new Attributes(null, "")
       s("a.b.c") = 8
       s.toString mustEqual "{: a={a: b={a.b: c=\"8\" } } }"
-      s.get("a.d.x") mustBe None
+      s.getString("a.d.x") mustBe None
       // shouldn't have changed the attr map:
       s.toString mustEqual "{: a={a: b={a.b: c=\"8\" } } }"
     }

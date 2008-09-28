@@ -158,8 +158,8 @@ object ConfiggySpec extends Specification with TestHelper {
 
         var checked = false
         var checkedAlso = false
-        Configgy.config.subscribe("robot") { (attr: Option[AttributeMap]) => checked = true }
-        Configgy.config.subscribe("unchanged") { (attr: Option[AttributeMap]) => checkedAlso = true }
+        Configgy.config.subscribe("robot") { (attr: Option[ConfigMap]) => checked = true }
+        Configgy.config.subscribe("unchanged") { (attr: Option[ConfigMap]) => checkedAlso = true }
         checked mustBe false
 
         val data2 =

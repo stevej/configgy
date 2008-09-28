@@ -4,6 +4,7 @@ import java.io.File
 import scala.collection.{Map, Set}
 import scala.collection.{immutable, mutable}
 import net.lag.extensions._
+import net.lag.logging.Logger
 
 
 private abstract class Phase
@@ -41,7 +42,7 @@ private class SubscriptionNode {
   }
 
   @throws(classOf[ValidationException])
-  def validate(key: List[String], current: Option[AttributeMap], replacement: Option[AttributeMap], phase: Phase): Unit = {
+  def validate(key: List[String], current: Option[ConfigMap], replacement: Option[ConfigMap], phase: Phase): Unit = {
     if ((current == None) && (replacement == None)) {
       // someone has subscribed to a nonexistent node... ignore.
       return
@@ -73,11 +74,11 @@ private class SubscriptionNode {
     for (val (segment, node) <- nextNodes) {
       val subCurrent = current match {
         case None => None
-        case Some(x) => x.getAttributes(segment)
+        case Some(x) => x.getConfigMap(segment)
       }
       val subReplacement = replacement match {
         case None => None
-        case Some(x) => x.getAttributes(segment)
+        case Some(x) => x.getConfigMap(segment)
       }
       node.validate(if (key == Nil) Nil else key.tail, subCurrent, subReplacement, phase)
     }
@@ -91,7 +92,7 @@ private class SubscriptionNode {
  * set of attribute maps, and control the flow of subscriptions and events
  * for subscribers.
  */
-class Config extends AttributeMap {
+class Config extends ConfigMap {
   private var root = new Attributes(this, "")
   private val subscribers = new SubscriptionNode
   private val subscriberKeys = new mutable.HashMap[Int, (SubscriptionNode, Subscriber)]
@@ -161,10 +162,10 @@ class Config extends AttributeMap {
     new SubscriptionKey(this, subkey)
   }
 
-  private[configgy] def subscribe(key: String)(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
+  private[configgy] def subscribe(key: String)(f: (Option[ConfigMap]) => Unit): SubscriptionKey = {
     subscribe(key, new Subscriber {
-      def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
-      def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
+      def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
+      def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
         f(replacement)
       }
     })
@@ -172,7 +173,7 @@ class Config extends AttributeMap {
 
   def subscribe(subscriber: Subscriber) = subscribe(null.asInstanceOf[String], subscriber)
 
-  override def subscribe(f: (Option[AttributeMap]) => Unit) = subscribe(null.asInstanceOf[String])(f)
+  override def subscribe(f: (Option[ConfigMap]) => Unit) = subscribe(null.asInstanceOf[String])(f)
 
   private[configgy] def unsubscribe(subkey: SubscriptionKey) = synchronized {
     subscriberKeys.get(subkey.id) match {
@@ -196,7 +197,7 @@ class Config extends AttributeMap {
   // -----  modifications that happen within monitored Attributes nodes
 
   @throws(classOf[ValidationException])
-  private def deepChange(name: String, key: String, operation: (AttributeMap, String) => Boolean): Boolean = synchronized {
+  private def deepChange(name: String, key: String, operation: (ConfigMap, String) => Boolean): Boolean = synchronized {
     val fullKey = if (name == "") (key) else (name + "." + key)
     val newRoot = root.copy
     val keyList = fullKey.split("\\.").toList
@@ -218,7 +219,7 @@ class Config extends AttributeMap {
     deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
   }
 
-  private[configgy] def deepSet(name: String, key: String, value: Array[String]) = {
+  private[configgy] def deepSet(name: String, key: String, value: Seq[String]) = {
     deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
   }
 
@@ -229,13 +230,65 @@ class Config extends AttributeMap {
 
   // -----  implement AttributeMap by wrapping our root object:
 
-  def get(key: String): Option[String] = root.get(key)
-  def getAttributes(key: String): Option[AttributeMap] = root.getAttributes(key)
-  def getStringList(key: String): Option[Array[String]] = root.getStringList(key)
-  def set(key: String, value: String): Unit = root.set(key, value)
-  def set(key: String, value: Array[String]): Unit = root.set(key, value)
+  def getString(key: String): Option[String] = root.getString(key)
+  def getConfigMap(key: String): Option[ConfigMap] = root.getConfigMap(key)
+  def getList(key: String): Seq[String] = root.getList(key)
+  def setString(key: String, value: String): Unit = root.setString(key, value)
+  def setList(key: String, value: Seq[String]): Unit = root.setList(key, value)
   def contains(key: String): Boolean = root.contains(key)
   def remove(key: String): Boolean = root.remove(key)
   def keys: Iterator[String] = root.keys
   def asMap(): Map[String, String] = root.asMap
+}
+
+
+object Config {
+  /**
+   * Create a config object from a config file of the given path
+   * and filename. The filename must be relative to the path. The path is
+   * used to resolve filenames given in "include" lines.
+   */
+  def fromFile(path: String, filename: String): Config = {
+    val config = new Config
+    try {
+      config.loadFile(path, filename)
+    } catch {
+      case e: Throwable =>
+        Logger.get.critical(e, "Failed to load config file '%s/%s'", path, filename)
+        throw e
+    }
+    config
+  }
+
+  /**
+   * Create a Config object from a config file of the given filename.
+   * The base folder will be extracted from the filename and used as a base
+   * path for resolving filenames given in "include" lines.
+   */
+  def fromFile(filename: String): Config = {
+    val n = filename.lastIndexOf('/')
+    if (n < 0) {
+      fromFile(new File(".").getCanonicalPath, filename)
+    } else {
+      fromFile(filename.substring(0, n), filename.substring(n + 1))
+    }
+  }
+
+  /**
+   * Create a Config object from the given named
+   * resource inside this jar file. "include" lines will also operate
+   * on resource paths.
+   */
+  def fromResource(name: String) = {
+    val config = new Config
+    try {
+      config.importer = new ResourceImporter
+      config.loadFile(name)
+    } catch {
+      case e: Throwable =>
+        Logger.get.critical(e, "Failed to load config resource '%s'", name)
+        throw e
+    }
+    config
+  }
 }

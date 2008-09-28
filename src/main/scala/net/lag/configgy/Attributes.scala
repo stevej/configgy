@@ -14,9 +14,9 @@ private[configgy] case class StringListCell(array: Array[String]) extends Cell
 
 
 /**
- * Actual implementation of AttributeMap.
+ * Actual implementation of ConfigMap.
  */
-private[configgy] class Attributes(val config: Config, val name: String) extends AttributeMap {
+private[configgy] class Attributes(val config: Config, val name: String) extends ConfigMap {
 
   private val cells = new mutable.HashMap[String, Cell]
   private var monitored = false
@@ -130,7 +130,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     attr
   }
 
-  def get(key: String): Option[String] = {
+  def getString(key: String): Option[String] = {
     lookupCell(key) match {
       case Some(StringCell(x)) => Some(x)
       case Some(StringListCell(x)) => Some(x.toList.mkString("[", ",", "]"))
@@ -138,7 +138,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     }
   }
 
-  def getAttributes(key: String): Option[Attributes] = {
+  def getConfigMap(key: String): Option[ConfigMap] = {
     lookupCell(key) match {
       case Some(AttributesCell(x)) => Some(x)
       case _ => None
@@ -159,22 +159,22 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     }
   }
 
-  def getStringList(key: String): Option[Array[String]] = {
+  def getList(key: String): Seq[String] = {
     lookupCell(key) match {
-      case Some(StringListCell(x)) => Some(x)
-      case Some(StringCell(x)) => Some(Array[String](x))
-      case _ => None
+      case Some(StringListCell(x)) => x
+      case Some(StringCell(x)) => Array[String](x)
+      case _ => Array[String]()
     }
   }
 
-  def set(key: String, value: String): Unit = {
+  def setString(key: String, value: String): Unit = {
     if (monitored) {
       config.deepSet(name, key, value)
       return
     }
 
     recurse(key) match {
-      case Some((attr, name)) => attr.set(name, value)
+      case Some((attr, name)) => attr.setString(name, value)
       case None => cells.get(key) match {
         case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
         case _ => cells += Pair(key, new StringCell(value))
@@ -182,17 +182,17 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     }
   }
 
-  def set(key: String, value: Array[String]): Unit = {
+  def setList(key: String, value: Seq[String]): Unit = {
     if (monitored) {
       config.deepSet(name, key, value)
       return
     }
 
     recurse(key) match {
-      case Some((attr, name)) => attr.set(name, value)
+      case Some((attr, name)) => attr.setList(name, value)
       case None => cells.get(key) match {
         case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
-        case _ => cells += Pair(key, new StringListCell(value))
+        case _ => cells += Pair(key, new StringListCell(value.toArray))
       }
     }
   }
@@ -244,10 +244,10 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
   private val INTERPOLATE_RE = """(?<!\\)\$\((\w[\w\d\._-]*)\)|\\\$""".r
 
   protected[configgy] def interpolate(s: String): String = {
-    def lookup(key: String, path: List[AttributeMap]): String = {
+    def lookup(key: String, path: List[ConfigMap]): String = {
       path match {
         case Nil => ""
-        case attr :: xs => attr.get(key) match {
+        case attr :: xs => attr.getString(key) match {
           case Some(x) => x
           case None => lookup(key, xs)
         }

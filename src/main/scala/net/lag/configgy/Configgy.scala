@@ -29,17 +29,7 @@ object Configgy {
    */
   def configure(path: String, filename: String): Unit = {
     Logger.reset
-
-    _config = new Config
-    try {
-      _config.loadFile(path, filename)
-    } catch {
-      case e: Throwable => {
-        Logger.get.critical(e, "Failed to load config file '%s/%s'", path, filename)
-        throw e
-      }
-    }
-
+    _config = Config.fromFile(path, filename)
     configLogging
 
     previousPath = path
@@ -83,17 +73,7 @@ object Configgy {
    */
   def configureFromResource(name: String) = {
     Logger.reset
-
-    _config = new Config
-    try {
-      _config.importer = new ResourceImporter
-      _config.loadFile(name)
-    } catch {
-      case e: Throwable =>
-        Logger.get.critical(e, "Failed to load config resource '%s'", name)
-        throw e
-    }
-
+    _config = Config.fromResource(name)
     configLogging
   }
 
@@ -101,7 +81,7 @@ object Configgy {
     val log = Logger.get("")
 
     try {
-      val attr = _config.getAttributes("log")
+      val attr = _config.getConfigMap("log")
       subscriber.commit(None, attr)
       if (attr.isDefined) {
         attr.get.subscribe(subscriber)
@@ -116,12 +96,12 @@ object Configgy {
 
   private class LoggingConfigSubscriber extends Subscriber {
     @throws(classOf[ValidationException])
-    def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
+    def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
       try {
-        for (val logConfig <- replacement) {
+        for (logConfig <- replacement) {
           Logger.configure(logConfig, true, true)
-          for (val key <- logConfig.keys if logConfig.getAttributes(key).isDefined) {
-            Logger.configure(logConfig.getAttributes(key).get, true, false)
+          for (key <- logConfig.keys; block <- logConfig.getConfigMap(key)) {
+            Logger.configure(block, true, false)
           }
         }
       } catch {
@@ -129,13 +109,13 @@ object Configgy {
       }
     }
 
-    def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
+    def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
       Logger.reset
 
-      for (val logConfig <- replacement) {
+      for (logConfig <- replacement) {
         Logger.configure(logConfig, false, true)
-        for (val key <- logConfig.keys if logConfig.getAttributes(key).isDefined) {
-          Logger.configure(logConfig.getAttributes(key).get, false, false)
+        for (key <- logConfig.keys; block <- logConfig.getConfigMap(key)) {
+          Logger.configure(block, false, false)
         }
       }
     }

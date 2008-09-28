@@ -5,12 +5,11 @@ import scala.util.Sorting
 
 
 /**
- * Abstract trait for an object that maps string keys to values of type
- * string, string array, or (nested) AttributeMap. Integers and booleans may
- * also be stored and retrieved, but they are converted to/from strings in
- * the process.
+ * Abstract trait for a map of string keys to strings, string lists, or (nested) ConfigMaps.
+ * Integers and booleans may also be stored and retrieved, but they are converted to/from
+ * strings in the process.
  */
-trait AttributeMap {
+trait ConfigMap {
   private val TRUE = "true"
   private val FALSE = "false"
 
@@ -23,22 +22,22 @@ trait AttributeMap {
    * lists will be returned as a combined string. Nested AttributeMaps
    * will return None as if there was no entry present.
    */
-  def get(key: String): Option[String]
+  def getString(key: String): Option[String]
 
   /**
    * Lookup an entry in this map, and if it exists and is a nested
-   * AttributeMap, return it. If the entry is a string or string list,
+   * ConfigMap, return it. If the entry is a string or string list,
    * it will return None as if there was no entry present.
    */
-  def getAttributes(key: String): Option[AttributeMap]
+  def getConfigMap(key: String): Option[ConfigMap]
 
   /**
    * Lookup an entry in this map, and if it exists and can be represented
    * as a string list, return it. String lists will be returned as-is, and
-   * strings will be returned as an array of length 1. Nested AttributeMaps
+   * strings will be returned as an array of length 1. Nested ConfigMaps
    * will return None as if there was no entry present.
    */
-  def getStringList(key: String): Option[Array[String]]
+  def getList(key: String): Seq[String]
 
   /**
    * Set a key/value pair in this map. If an entry already existed with
@@ -47,7 +46,7 @@ trait AttributeMap {
    * @throws AttributesException if the key already refers to a nested
    *     AttributeMap
    */
-  def set(key: String, value: String): Unit
+  def setString(key: String, value: String): Unit
 
   /**
    * Set a key/value pair in this map. If an entry already existed with
@@ -56,7 +55,7 @@ trait AttributeMap {
    * @throws AttributesException if the key already refers to a nested
    *     AttributeMap
    */
-  def set(key: String, value: Array[String]): Unit
+  def setList(key: String, value: Seq[String]): Unit
 
   /**
    * Returns true if this map contains the given key.
@@ -98,8 +97,8 @@ trait AttributeMap {
    * If the requested key is present, return its value. Otherwise, return
    * the given default value.
    */
-  def get(key: String, defaultValue: String): String = {
-    get(key) match {
+  def getString(key: String, defaultValue: String): String = {
+    getString(key) match {
       case Some(x) => x
       case None => defaultValue
     }
@@ -111,7 +110,7 @@ trait AttributeMap {
    * return <code>None</code>.
    */
   def getInt(key: String): Option[Int] = {
-    get(key) match {
+    getString(key) match {
       case Some(x) => {
         try {
           Some(Integer.parseInt(x))
@@ -141,7 +140,7 @@ trait AttributeMap {
    * return that bool. Otherwise, return <code>None</code>.
    */
   def getBool(key: String): Option[Boolean] = {
-    get(key) match {
+    getString(key) match {
       case Some(x) => Some(x.equals(TRUE))
       case None => None
     }
@@ -163,24 +162,20 @@ trait AttributeMap {
    * Set the given key to an int value, by converting it to a string
    * first.
    */
-  def set(key: String, value: Int): Unit = set(key, value.toString)
+  def setInt(key: String, value: Int): Unit = setString(key, value.toString)
 
   /**
    * Set the given key to a bool value, by converting it to a string
    * first.
    */
-  def set(key: String, value: Boolean): Unit = {
-    if (value) {
-      set(key, TRUE)
-    } else {
-      set(key, FALSE)
-    }
+  def setBool(key: String, value: Boolean): Unit = {
+    setString(key, if (value) TRUE else FALSE)
   }
 
   /**
    * Return the keys of this map, in sorted order.
    */
-  def sortedKeys = {
+  def sortedKeys() = {
     // :( why does this have to be done manually?
     val keys = this.keys.toList.toArray
     Sorting.quickSort(keys)
@@ -192,31 +187,31 @@ trait AttributeMap {
    * validating. Whenever this AttributeMap changes, a new copy will be
    * passed to the given function.
    */
-  def subscribe(f: (Option[AttributeMap]) => Unit): SubscriptionKey = {
+  def subscribe(f: (Option[ConfigMap]) => Unit): SubscriptionKey = {
     subscribe(new Subscriber {
-      def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
-      def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
+      def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
+      def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
         f(replacement)
       }
     })
   }
 
 
-  /** Equivalent to <code>get(key)</code>. */
-  def apply(key: String): Option[String] = get(key)
+  /** Equivalent to <code>getString(key)</code>. */
+  def apply(key: String): Option[String] = getString(key)
 
-  /** Equivalent to <code>get(key, defaultValue)</code>. */
-  def apply(key: String, defaultValue: String) = get(key, defaultValue)
+  /** Equivalent to <code>getString(key, defaultValue)</code>. */
+  def apply(key: String, defaultValue: String) = getString(key, defaultValue)
 
-  /** Equivalent to <code>set(key, value)</code>. */
-  def update(key: String, value: String) = set(key, value)
+  /** Equivalent to <code>setString(key, value)</code>. */
+  def update(key: String, value: String) = setString(key, value)
 
-  /** Equivalent to <code>set(key, value)<code>. */
-  def update(key: String, value: Int) = set(key, value)
+  /** Equivalent to <code>setInt(key, value)<code>. */
+  def update(key: String, value: Int) = setInt(key, value)
 
-  /** Equivalent to <code>set(key, value)<code>. */
-  def update(key: String, value: Boolean) = set(key, value)
+  /** Equivalent to <code>setBool(key, value)<code>. */
+  def update(key: String, value: Boolean) = setBool(key, value)
 
-  /** Equivalent to <code>set(key, value)<code>. */
-  def update(key: String, value: Array[String]) = set(key, value)
+  /** Equivalent to <code>setList(key, value)<code>. */
+  def update(key: String, value: Seq[String]) = setList(key, value)
 }

@@ -9,18 +9,18 @@ import org.specs._
 object ConfigSpec extends Specification with TestHelper {
 
   class FakeSubscriber extends Subscriber {
-    def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
-    def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
+    def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
+    def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
   }
 
   // remembers the before & after config nodes when committing a change
   class MemorySubscriber extends Subscriber {
     var used = false
-    var savedCurrent: Option[AttributeMap] = None
-    var savedReplacement: Option[AttributeMap] = None
+    var savedCurrent: Option[ConfigMap] = None
+    var savedReplacement: Option[ConfigMap] = None
 
-    def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
-    def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = {
+    def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
+    def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
       used = true
       savedCurrent = current
       savedReplacement = replacement
@@ -30,8 +30,8 @@ object ConfigSpec extends Specification with TestHelper {
 
   // refuses any change to its node.
   class AngrySubscriber extends Subscriber {
-    def validate(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = throw new ValidationException("no way!")
-    def commit(current: Option[AttributeMap], replacement: Option[AttributeMap]): Unit = { }
+    def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = throw new ValidationException("no way!")
+    def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
   }
 
 
@@ -43,7 +43,7 @@ object ConfigSpec extends Specification with TestHelper {
       c.debugSubscribers mustEqual "subs=0 { alpha=0 { beta=0 { gamma=1 } } }"
       c.unsubscribe(id)
       c.debugSubscribers mustEqual "subs=0 { alpha=0 { beta=0 { gamma=0 } } }"
-      id = c.subscribe("alpha.beta") { (attr: Option[AttributeMap]) => Console.println("hello") }
+      id = c.subscribe("alpha.beta") { (attr: Option[ConfigMap]) => Console.println("hello") }
       c.debugSubscribers mustEqual "subs=0 { alpha=0 { beta=1 { gamma=0 } } }"
       c.unsubscribe(id)
       c.debugSubscribers mustEqual "subs=0 { alpha=0 { beta=0 { gamma=0 } } }"
@@ -54,7 +54,7 @@ object ConfigSpec extends Specification with TestHelper {
       c("alpha.beta.gamma") = "hello"
 
       var checked = false
-      c.subscribe("alpha.beta") { (attr: Option[AttributeMap]) => checked = true }
+      c.subscribe("alpha.beta") { (attr: Option[ConfigMap]) => checked = true }
       checked mustBe false
       c("alpha.beta.delta") = "goodbye"
       checked mustBe true
@@ -115,7 +115,7 @@ object ConfigSpec extends Specification with TestHelper {
       c("forest.matches") = false
       rootsub.used mustBe true
       betasub.used mustBe false
-      c.getAttributes("forest").get.toString mustEqual
+      c.getConfigMap("forest").get.toString mustEqual
         "{forest: fires={forest.fires: are=\"bad\" } matches=\"false\" }"
 
       c.remove("forest") must throwA(new ValidationException(""))

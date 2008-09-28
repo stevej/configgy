@@ -5,7 +5,7 @@ import java.util.{Calendar, Date, logging => javalog}
 import scala.collection.Map
 import scala.collection.mutable
 import net.lag.extensions._
-import net.lag.configgy.{AttributesException, AttributeMap}
+import net.lag.configgy.{AttributesException, ConfigMap}
 
 
 // replace java's ridiculous log levels with the standard ones.
@@ -312,7 +312,7 @@ object Logger {
    * @throws LoggingException if a config value can't be parsed correctly
    *     (some settings can only be one of a small possible set of values)
    */
-  def configure(config: AttributeMap, validateOnly: Boolean, allowNestedBlocks: Boolean): Logger = {
+  def configure(config: ConfigMap, validateOnly: Boolean, allowNestedBlocks: Boolean): Logger = {
     // make sure no other screwy attributes are in this AttributeMap
     val allowed = List("node", "console", "filename", "roll", "utc",
                        "truncate", "truncate_stack_traces", "level",
@@ -320,13 +320,13 @@ object Logger {
                        "syslog_use_iso_date_format")
     var forbidden = config.keys.filter(x => !(allowed contains x)).toList
     if (allowNestedBlocks) {
-      forbidden = forbidden.filter(x => !config.getAttributes(x).isDefined)
+      forbidden = forbidden.filter(x => !config.getConfigMap(x).isDefined)
     }
     if (forbidden.length > 0) {
       throw new LoggingException("Unknown logging config attribute(s): " + forbidden.mkString(", "))
     }
 
-    val logger = Logger.get(config.get("node", ""))
+    val logger = Logger.get(config.getString("node", ""))
     if (! validateOnly) {
       for (val handler <- logger.getHandlers) {
         logger.removeHandler(handler)
@@ -339,19 +339,19 @@ object Logger {
       handlers = new ConsoleHandler(new FileFormatter) :: handlers
     }
 
-    for (val hostname <- config.get("syslog_host")) {
+    for (val hostname <- config.getString("syslog_host")) {
       val useIsoDateFormat = config.getBool("syslog_use_iso_date_format", true)
       val handler = new SyslogHandler(useIsoDateFormat, hostname)
-      for (val serverName <- config.get("syslog_server_name")) {
+      for (val serverName <- config.getString("syslog_server_name")) {
         handler.serverName = serverName
       }
       handlers = handler :: handlers
     }
 
     // options for using a logfile
-    for (val filename <- config.get("filename")) {
+    for (val filename <- config.getString("filename")) {
       // i bet there's an easier way to do this.
-      val policy = config.get("roll", "never").toLowerCase match {
+      val policy = config.getString("roll", "never").toLowerCase match {
         case "never" => Never
         case "hourly" => Hourly
         case "daily" => Daily
@@ -371,7 +371,7 @@ object Logger {
      * signal to javalog to use the parent logger's level. this is the
      * usual desired behavior, but not really documented anywhere. sigh.
      */
-    val level = config.get("level") match {
+    val level = config.getString("level") match {
       case Some(levelName) => {
         levelNamesMap.get(levelName.toUpperCase) match {
           case Some(x) => x
