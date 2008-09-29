@@ -34,6 +34,14 @@ object AttributesSpec extends Specification {
       s("unknown", "500") mustEqual "500"
     }
 
+    "case-normalize keys in get/set" in {
+      val s = new Attributes(null, "")
+      s("Name") = "Communist"
+      s("AGE") = 8
+      s("naME") mustEqual Some("Communist")
+      s("age") mustEqual Some("8")
+    }
+
     "set compound values" in {
       val s = new Attributes(null, "")
       s("name") = "Communist"

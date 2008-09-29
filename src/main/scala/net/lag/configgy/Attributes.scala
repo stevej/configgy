@@ -68,8 +68,8 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
   private def lookupCell(key: String): Option[Cell] = {
     val elems = key.split("\\.", 2)
     if (elems.length > 1) {
-      cells.get(elems(0)) match {
-        case Some(AttributesCell(x)) => x.lookupCell(elems(1))
+      cells.get(elems(0).toLowerCase) match {
+        case Some(AttributesCell(x)) => x.lookupCell(elems(1).toLowerCase)
         case None => inherit match {
           case Some(a) => a.lookupCell(key)
           case None => None
@@ -77,7 +77,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         case _ => None
       }
     } else {
-      cells.get(elems(0)) match {
+      cells.get(elems(0).toLowerCase) match {
         case x @ Some(_) => x
         case None => inherit match {
           case Some(a) => a.lookupCell(key)
@@ -107,7 +107,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
   private def recurse(key: String): Option[(Attributes, String)] = {
     val elems = key.split("\\.", 2)
     if (elems.length > 1) {
-      val attr = (cells.get(elems(0)) match {
+      val attr = (cells.get(elems(0).toLowerCase) match {
         case Some(AttributesCell(x)) => x
         case Some(_) => throw new AttributesException("Illegal key " + key)
         case None => createNested(elems(0))
@@ -175,9 +175,9 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
 
     recurse(key) match {
       case Some((attr, name)) => attr.setString(name, value)
-      case None => cells.get(key) match {
+      case None => cells.get(key.toLowerCase) match {
         case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
-        case _ => cells += Pair(key, new StringCell(value))
+        case _ => cells.put(key.toLowerCase, new StringCell(value))
       }
     }
   }
@@ -190,9 +190,9 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
 
     recurse(key) match {
       case Some((attr, name)) => attr.setList(name, value)
-      case None => cells.get(key) match {
+      case None => cells.get(key.toLowerCase) match {
         case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
-        case _ => cells += Pair(key, new StringListCell(value.toArray))
+        case _ => cells.put(key, new StringListCell(value.toArray))
       }
     }
   }
@@ -200,7 +200,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
   def contains(key: String): Boolean = {
     recurse(key) match {
       case Some((attr, name)) => attr.contains(name)
-      case None => cells.contains(key)
+      case None => cells.contains(key.toLowerCase)
     }
   }
 
@@ -212,7 +212,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     recurse(key) match {
       case Some((attr, name)) => attr.remove(name)
       case None => {
-        cells.removeKey(key) match {
+        cells.removeKey(key.toLowerCase) match {
           case Some(_) => true
           case None => false
         }
