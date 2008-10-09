@@ -93,7 +93,7 @@ object ConfigParserSpec extends Specification {
         "<cat>\n" +
         "    dog = 1\n" +
         "</cat>\n"
-      parse(data) must throwA(new AttributesException(""))
+      parse(data) must throwA(new ConfigException(""))
     }
 
     "catch unknown block modifiers" in {

@@ -5,8 +5,6 @@ import scala.collection.{immutable, mutable, Map}
 import net.lag.extensions._
 
 
-class AttributesException(reason: String) extends Exception(reason)
-
 private[configgy] abstract class Cell
 private[configgy] case class StringCell(value: String) extends Cell
 private[configgy] case class AttributesCell(attr: Attributes) extends Cell
@@ -15,6 +13,7 @@ private[configgy] case class StringListCell(array: Array[String]) extends Cell
 
 /**
  * Actual implementation of ConfigMap.
+ * Stores items in Cell objects, and handles interpolation and key recursion.
  */
 private[configgy] class Attributes(val config: Config, val name: String) extends ConfigMap {
 
@@ -95,21 +94,21 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
    * <p> If the key is compound, but nested Attributes objects don't exist
    * that match the key, an attempt will be made to create the nested
    * Attributes objects. If one of the key segments already refers to an
-   * attribute that isn't a nested Attribute object, an AttributesException
+   * attribute that isn't a nested Attribute object, an ConfigException
    * will be thrown.
    *
    * <p> For example, for the key "a.b.c", the Attributes object for "a.b"
    * and the key "c" will be returned, creating the "a.b" Attributes object
    * if necessary. If "a" or "a.b" exists but isn't a nested Attributes
-   * object, then an AttributesException will be thrown.
+   * object, then an ConfigException will be thrown.
    */
-  @throws(classOf[AttributesException])
+  @throws(classOf[ConfigException])
   private def recurse(key: String): Option[(Attributes, String)] = {
     val elems = key.split("\\.", 2)
     if (elems.length > 1) {
       val attr = (cells.get(elems(0).toLowerCase) match {
         case Some(AttributesCell(x)) => x
-        case Some(_) => throw new AttributesException("Illegal key " + key)
+        case Some(_) => throw new ConfigException("Illegal key " + key)
         case None => createNested(elems(0))
       })
       attr.recurse(elems(1)) match {
@@ -153,7 +152,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
       case Some((attr, name)) => attr.makeAttributes(name)
       case None => lookupCell(key) match {
         case Some(AttributesCell(x)) => x
-        case Some(_) => throw new AttributesException("Illegal key " + key)
+        case Some(_) => throw new ConfigException("Illegal key " + key)
         case None => createNested(key)
       }
     }
@@ -176,7 +175,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     recurse(key) match {
       case Some((attr, name)) => attr.setString(name, value)
       case None => cells.get(key.toLowerCase) match {
-        case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
+        case Some(AttributesCell(x)) => throw new ConfigException("Illegal key " + key)
         case _ => cells.put(key.toLowerCase, new StringCell(value))
       }
     }
@@ -191,7 +190,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     recurse(key) match {
       case Some((attr, name)) => attr.setList(name, value)
       case None => cells.get(key.toLowerCase) match {
-        case Some(AttributesCell(x)) => throw new AttributesException("Illegal key " + key)
+        case Some(AttributesCell(x)) => throw new ConfigException("Illegal key " + key)
         case _ => cells.put(key, new StringListCell(value.toArray))
       }
     }

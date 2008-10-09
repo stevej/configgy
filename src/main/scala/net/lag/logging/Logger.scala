@@ -5,7 +5,7 @@ import java.util.{Calendar, Date, logging => javalog}
 import scala.collection.Map
 import scala.collection.mutable
 import net.lag.extensions._
-import net.lag.configgy.{AttributesException, ConfigMap}
+import net.lag.configgy.{ConfigException, ConfigMap}
 
 
 // replace java's ridiculous log levels with the standard ones.

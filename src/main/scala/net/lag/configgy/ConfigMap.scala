@@ -4,6 +4,9 @@ import scala.collection.Map
 import scala.util.Sorting
 
 
+class ConfigException(reason: String) extends Exception(reason)
+
+
 /**
  * Abstract trait for a map of string keys to strings, string lists, or (nested) ConfigMaps.
  * Integers and booleans may also be stored and retrieved, but they are converted to/from
@@ -43,7 +46,7 @@ trait ConfigMap {
    * Set a key/value pair in this map. If an entry already existed with
    * that key, it's replaced.
    *
-   * @throws AttributesException if the key already refers to a nested
+   * @throws ConfigException if the key already refers to a nested
    *     AttributeMap
    */
   def setString(key: String, value: String): Unit
@@ -52,7 +55,7 @@ trait ConfigMap {
    * Set a key/value pair in this map. If an entry already existed with
    * that key, it's replaced.
    *
-   * @throws AttributesException if the key already refers to a nested
+   * @throws ConfigException if the key already refers to a nested
    *     AttributeMap
    */
   def setList(key: String, value: Seq[String]): Unit
@@ -197,8 +200,13 @@ trait ConfigMap {
   }
 
 
-  /** Equivalent to <code>getString(key)</code>. */
-  def apply(key: String): Option[String] = getString(key)
+  /**
+   * If the requested key is present, return its value. Otherwise, throw a ConfigException.
+FIXME
+   */
+  def apply(key: String): Option[String] = {
+    getString(key)
+  }
 
   /** Equivalent to <code>getString(key, defaultValue)</code>. */
   def apply(key: String, defaultValue: String) = getString(key, defaultValue)
