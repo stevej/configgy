@@ -109,6 +109,18 @@ final class ConfiggyString(wrapped: String) {
       ch.toString
     }
   }
+
+  /**
+   * Turn a string of hex digits into a byte array. This does the exact
+   * opposite of <code>Array[Byte]#hexlify</code>.
+   */
+  def unhexlify(): Array[Byte] = {
+    val buffer = new Array[Byte](wrapped.length / 2)
+    for (val i <- 0.until(wrapped.length, 2)) {
+      buffer(i/2) = Integer.parseInt(wrapped.substring(i, i+2), 16).toByte
+    }
+    buffer
+  }
 }
 
 
