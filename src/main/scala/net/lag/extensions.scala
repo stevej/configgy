@@ -10,7 +10,7 @@ final class ConfiggyString(wrapped: String) {
    * Scala does not yet (Dec 2007) support java's String.format natively.
    * Fake it by building the Object[] manually for a handful of params.
    */
-  def format(items: Any*): String = String.format(wrapped, items.toArray.asInstanceOf[Array[Object]])
+  //def format(items: Any*): String = String.format(wrapped, items.toArray.asInstanceOf[Array[Object]])
 
   /**
    * For every section of a string that matches a regular expression, call
@@ -84,7 +84,7 @@ final class ConfiggyString(wrapped: String) {
   }
 
   // we intentionally don't unquote "\$" here, so it can be used to escape interpolation later.
-  private val UNQUOTE_RE = "\\\\(u[\\dA-Fa-f]{4}|x[\\dA-Fa-f]{2}|[rnt\"\\\\])".r
+  private val UNQUOTE_RE = """\\(u[\dA-Fa-f]{4}|x[\dA-Fa-f]{2}|[rnt\"\\])""".r
 
   /**
    * Unquote an ASCII string that has been quoted in a style like
@@ -97,10 +97,10 @@ final class ConfiggyString(wrapped: String) {
    */
   def unquoteC() = {
     regexSub(UNQUOTE_RE) { m =>
-      val ch = m.group(0).charAt(0) match {
+      val ch = m.group(1).charAt(0) match {
         // holy crap! this is terrible:
-        case 'u' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
-        case 'x' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
+        case 'u' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
+        case 'x' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
         case 'r' => '\r'
         case 'n' => '\n'
         case 't' => '\t'

@@ -257,9 +257,9 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
       if (m.matched == "\\$") {
         "$"
       } else if (config == null) {
-        lookup(m.group(0), List(this, EnvironmentAttributes))
+        lookup(m.group(1), List(this, EnvironmentAttributes))
       } else {
-        lookup(m.group(0), List(this, config, EnvironmentAttributes))
+        lookup(m.group(1), List(this, config, EnvironmentAttributes))
       }
     }
   }

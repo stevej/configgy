@@ -131,7 +131,7 @@ abstract class Formatter extends javalog.Formatter {
           case null =>
             r.getMessage
           case formatArgs =>
-            String.format(r.getMessage, formatArgs)
+            String.format(r.getMessage, formatArgs: _*)
         }
     }
 
