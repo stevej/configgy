@@ -94,7 +94,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
    * <p> If the key is compound, but nested Attributes objects don't exist
    * that match the key, an attempt will be made to create the nested
    * Attributes objects. If one of the key segments already refers to an
-   * attribute that isn't a nested Attribute object, an ConfigException
+   * attribute that isn't a nested Attribute object, a ConfigException
    * will be thrown.
    *
    * <p> For example, for the key "a.b.c", the Attributes object for "a.b"

@@ -150,6 +150,27 @@ object ConfigParserSpec extends Specification {
       a.getString("upp.uid", "100") mustEqual "23"
     }
 
+    "use parent scope for lookups" in {
+      val data =
+        "<daemon><inner>\n" +
+        "  <common>\n" +
+        "    ulimit_fd = 32768\n" +
+        "    uid = 16\n" +
+        "  </common>\n" +
+        "  <upp inherit=\"common\">\n" +
+        "    uid = 23\n" +
+        "  </upp>\n" +
+        "  <slac inherit=\"daemon.inner.common\">\n" +
+        "  </slac>\n" +
+        "</inner></daemon>\n"
+      val a = parse(data)
+      a.toString mustEqual "{: daemon={daemon: inner={daemon.inner: common={daemon.inner.common: uid=\"16\" ulimit_fd=\"32768\" } " +
+        "slac={daemon.inner.slac (inherit=daemon.inner.common): } upp={daemon.inner.upp (inherit=daemon.inner.common): uid=\"23\" } } } }"
+      a.getString("daemon.inner.upp.ulimit_fd", "9") mustEqual "32768"
+      a.getString("daemon.inner.upp.uid", "100") mustEqual "23"
+      a.getString("daemon.inner.slac.uid", "100") mustEqual "16"
+    }
+
     "handle a complex case" in {
       val data =
         "<daemon>\n" +
