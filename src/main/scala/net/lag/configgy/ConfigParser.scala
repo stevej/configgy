@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2008, Robey Pointer <robeypointer@gmail.com>
+ * ISC licensed. Please see the included LICENSE file for more information.
+ */
+
 package net.lag.configgy
 
 import scala.collection.mutable.Stack
@@ -30,7 +35,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
 
 
   // the (~ "") is to workaround a bug where RegexParser can't handle trailing whitespace
-  // FIXME: file a bug against scala so they can fix this.
+  // FIXME: scala fixed this bug in 2.7.2.
   def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose) ~ ""
 
   def includeFile = "include" ~> string ^^ {
@@ -54,11 +59,12 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
 
   def sectionOpen = "<" ~> tagNameToken ~ rep(tagAttribute) <~ ">" ^^ {
     case name ~ attrList =>
+      val parent = if (sections.size > 0) attr.makeAttributes(sections.mkString(".")) else attr
       sections += name
       prefix = sections.mkString("", ".", ".")
       val newBlock = attr.makeAttributes(sections.mkString("."))
       for ((k, v) <- attrList) k match {
-        case "inherit" => newBlock inheritFrom attr.makeAttributes(v)
+        case "inherit" => newBlock.inheritFrom(if (parent.getConfigMap(v).isDefined) parent.makeAttributes(v) else attr.makeAttributes(v))
         case _ => throw new ParseException("Unknown block modifier")
       }
   }

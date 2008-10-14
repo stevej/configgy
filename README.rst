@@ -134,8 +134,7 @@ Groups of keys may be enclosed in an XML-like tag::
     </pingd>
 
 Nested values can be accessed from the API and from within the config file
-as if they were in C structs, using dotted-name notation. So the same
-effect could have been done with::
+as if they were in C structs, using dotted-name notation. So the above config is the same as::
 
     pingd.timeout = 30
 
@@ -326,7 +325,7 @@ You can build the scaladocs with the ant rule::
 
 The main interface is ``Configgy``, which can be used to load a config file
 and configure logging. The loaded config object is of type ``Config`` which is
-just an ``AttributeMap`` with methods added for handling subscriptions.
+just a ``ConfigMap`` with methods added for handling subscriptions.
 
 
 Basic Config
@@ -337,14 +336,17 @@ Usually you will just want to set or get config values.
 Getting values can return an Option, or (if you provide a default value), a
 direct String (or Int, or Boolean, etc)::
 
-    scala> config("name")
+    scala> config.getString("name")
     res1: Option[String] = Some(Bender)
-
-    scala> config("name", "Frank")
+    
+    scala> config("name")
     res2: String = Bender
 
+    scala> config("name", "Frank")
+    res3: String = Bender
+
     scala> config.getInt("age", 16)   
-    res3: Int = 23
+    res4: Int = 23
 
 Setting values is similar::
 
@@ -356,12 +358,12 @@ To access a nested attribute, you can either use a dotted key like::
     scala> config.getInt("pingd.port")
     res10: Option[Int] = Some(3000)
 
-Or you can access the intermediate ``AttributesMap`` object::
+Or you can access the intermediate ``ConfigMap`` object::
 
-    scala> config.getAttributes("pingd")
-    res1: Option[net.lag.configgy.AttributeMap] = Some({pingd: port="3000" })
+    scala> config.getConfigMap("pingd")
+    res1: Option[net.lag.configgy.ConfigMap] = Some({pingd: port="3000" })
 
-    scala> config.getAttributes("pingd").get.getInt("port")
+    scala> config.getConfigMap("pingd").get.getInt("port")
     res2: Option[Int] = Some(3000)
 
 
@@ -436,6 +438,6 @@ with a cleaner interface.
 Contact
 =======
 
-Configgy was written by Robey Pointer <robey@lag.net> and is licensed under
-the ISC license (included). Please write me with questions or comments, but
-the software is provided as-is.
+Configgy was written by Robey Pointer <robeypointer@gmail.com> and is licensed
+under the ISC license (included). Please write me with questions or comments,
+but the software is provided as-is.

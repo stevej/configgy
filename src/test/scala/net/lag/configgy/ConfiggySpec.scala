@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2008, Robey Pointer <robeypointer@gmail.com>
+ * ISC licensed. Please see the included LICENSE file for more information.
+ */
+
 package net.lag.configgy
 
 import java.io.{BufferedReader, InputStreamReader, File, FileInputStream, FileOutputStream}
@@ -40,7 +45,7 @@ object ConfiggySpec extends Specification with TestHelper {
         Configgy.configure(folderName, "test.conf")
 
         // verify the config file got loaded:
-        Configgy.config("name").get mustEqual "Nibbler"
+        Configgy.config("name") mustEqual "Nibbler"
 
         Logger.get.info("this is at info level.")
         Logger.get.warning("this is at warning level.")
