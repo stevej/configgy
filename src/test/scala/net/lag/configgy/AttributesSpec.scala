@@ -16,30 +16,44 @@ object AttributesSpec extends Specification {
       s.toString mustEqual "{root: age=\"8\" name=\"Communist\" }"
       s.setInt("age", 19)
       s.toString mustEqual "{root: age=\"19\" name=\"Communist\" }"
+      s.setBool("sleepy", true)
+      s.toString mustEqual "{root: age=\"19\" name=\"Communist\" sleepy=\"true\" }"
+
+      // try both APIs.
+      val s2 = new Attributes(null, "root")
+      s2.toString mustEqual "{root: }"
+      s2("name") = "Communist"
+      s2.toString mustEqual "{root: name=\"Communist\" }"
+      s2("age") = 8
+      s2.toString mustEqual "{root: age=\"8\" name=\"Communist\" }"
+      s2("age") = 19
+      s2.toString mustEqual "{root: age=\"19\" name=\"Communist\" }"
+      s2("sleepy") = true
+      s2.toString mustEqual "{root: age=\"19\" name=\"Communist\" sleepy=\"true\" }"
     }
 
     "get values" in {
       val s = new Attributes(null, "root")
       s("name") = "Communist"
       s("age") = 8
+      s("sleepy") = true
       s.getString("name", "") mustEqual "Communist"
       s.getInt("age", 999) mustEqual 8
       s.getInt("unknown", 500) mustEqual 500
-      (s("name") match {
-          case Some(x) => x
-          case None => null
-      }) mustEqual "Communist"
+      s("name") mustEqual "Communist"
       s("age", null) mustEqual "8"
       s("age", "500") mustEqual "8"
       s("unknown", "500") mustEqual "500"
+      s("age").toInt mustEqual 8
+      s("sleepy").toBoolean mustEqual true
     }
 
     "case-normalize keys in get/set" in {
       val s = new Attributes(null, "")
       s("Name") = "Communist"
       s("AGE") = 8
-      s("naME") mustEqual Some("Communist")
-      s("age") mustEqual Some("8")
+      s("naME") mustEqual "Communist"
+      s("age").toInt mustEqual 8
     }
 
     "set compound values" in {

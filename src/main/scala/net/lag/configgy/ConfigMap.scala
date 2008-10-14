@@ -201,15 +201,23 @@ trait ConfigMap {
 
 
   /**
-   * If the requested key is present, return its value. Otherwise, throw a ConfigException.
-FIXME
+   * If the requested key is present, return its value as a string. Otherwise, throw a
+   * ConfigException. <code>toInt</code> and <code>toBoolean</code> may be called on the
+   * returned string if an int or bool is desired.
    */
-  def apply(key: String): Option[String] = {
-    getString(key)
+  def apply(key: String): String = getString(key) match {
+    case None => throw new ConfigException("undefined config: " + key)
+    case Some(v) => v
   }
 
   /** Equivalent to <code>getString(key, defaultValue)</code>. */
   def apply(key: String, defaultValue: String) = getString(key, defaultValue)
+
+  /** Equivalent to <code>getInt(key, defaultValue)</code>. */
+  def apply(key: String, defaultValue: Int) = getInt(key, defaultValue)
+
+  /** Equivalent to <code>getBool(key, defaultValue)</code>. */
+  def apply(key: String, defaultValue: Boolean) = getBool(key, defaultValue)
 
   /** Equivalent to <code>setString(key, value)</code>. */
   def update(key: String, value: String) = setString(key, value)

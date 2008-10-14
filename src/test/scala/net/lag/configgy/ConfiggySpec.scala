@@ -40,7 +40,7 @@ object ConfiggySpec extends Specification with TestHelper {
         Configgy.configure(folderName, "test.conf")
 
         // verify the config file got loaded:
-        Configgy.config("name").get mustEqual "Nibbler"
+        Configgy.config("name") mustEqual "Nibbler"
 
         Logger.get.info("this is at info level.")
         Logger.get.warning("this is at warning level.")
