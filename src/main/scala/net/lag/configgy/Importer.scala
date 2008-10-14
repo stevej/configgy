@@ -1,4 +1,9 @@
-package net.lag.configgy;
+/*
+ * Copyright (c) 2008, Robey Pointer <robeypointer@gmail.com>
+ * ISC licensed. Please see the included LICENSE file for more information.
+ */
+
+package net.lag.configgy
 
 import java.io.{BufferedReader, File, FileInputStream, InputStream, InputStreamReader}
 
