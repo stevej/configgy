@@ -81,7 +81,7 @@ final class ConfiggyString(wrapped: String) {
   }
 
   // we intentionally don't unquote "\$" here, so it can be used to escape interpolation later.
-  private val UNQUOTE_RE = """\\(u[\dA-Fa-f]{4}|x[\dA-Fa-f]{2}|[rnt\"\\])""".r
+  private val UNQUOTE_RE = """\\(u[\dA-Fa-f]{4}|x[\dA-Fa-f]{2}|[/rnt\"\\])""".r
 
   /**
    * Unquote an ASCII string that has been quoted in a style like

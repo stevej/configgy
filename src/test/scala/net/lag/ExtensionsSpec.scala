@@ -24,6 +24,7 @@ object ExtensionsSpec extends Specification {
       "she said \\\"hello\\\"".unquoteC mustEqual "she said \"hello\""
       "\\\\backslash".unquoteC mustEqual "\\backslash"
       "real\\$dollar".unquoteC mustEqual "real\\$dollar"
+      "silly\\/quote".unquoteC mustEqual "silly/quote"
     }
 
     "hexlify" in {
