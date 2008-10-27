@@ -174,5 +174,13 @@ object ConfigSpec extends Specification with TestHelper {
         tempFilename.delete
       }
     }
+
+    "build from a map" in {
+      val c = Config.fromMap(Map("apples" -> "23", "oranges" -> "17", "fruit.misc" -> "x,y,z"))
+      c("apples") mustEqual "23"
+      c("oranges") mustEqual "17"
+      c("fruit.misc") mustEqual "x,y,z"
+      c.toString mustEqual "{: apples=\"23\" fruit={fruit: misc=\"x,y,z\" } oranges=\"17\" }"
+    }
   }
 }

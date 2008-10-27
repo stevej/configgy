@@ -296,4 +296,15 @@ object Config {
     }
     config
   }
+
+  /**
+   * Create a Config object from a map of String keys and String values.
+   */
+  def fromMap(m: Map[String, String]) = {
+    val config = new Config
+    for ((k, v) <- m.elements) {
+      config(k) = v
+    }
+    config
+  }
 }
