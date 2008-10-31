@@ -19,12 +19,15 @@ import net.lag.extensions._
  * An example of how to generate a `build.properties` file is included in
  * configgy's ant files, and also in the "scala-build" github project here:
  * <http://github.com/robey/scala-build/tree/master>
+ *
+ * You have to pass in a class from your package in order to identify the
+ * location of the `build.properties` file.
  */
-object RuntimeEnvironment {
+class RuntimeEnvironment(cls: Class[_]) {
   // load build info, if present.
   private var buildProperties = new Properties
   try {
-    buildProperties.load(getClass.getResource("build.properties").openStream)
+    buildProperties.load(cls.getResource("build.properties").openStream)
   } catch {
     case _ =>
   }
