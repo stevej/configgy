@@ -40,6 +40,16 @@ trait ConfigMap {
   def getConfigMap(key: String): Option[ConfigMap]
 
   /**
+   * Lookup an entry in this map, and if it exists and is a nested
+   * ConfigMap, return it. If not, create an empty map with this name
+   * and return that.
+   *
+   * @throws ConfigException if the key already refers to a string or
+   *     string list
+   */
+  def configMap(key: String): ConfigMap
+
+  /**
    * Lookup an entry in this map, and if it exists and can be represented
    * as a string list, return it. String lists will be returned as-is, and
    * strings will be returned as an array of length 1. Nested ConfigMaps

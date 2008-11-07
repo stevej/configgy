@@ -26,6 +26,7 @@ private[configgy] object EnvironmentAttributes extends ConfigMap {
   def getString(key: String): Option[String] = env.get(key)
 
   def getConfigMap(key: String): Option[ConfigMap] = None
+  def configMap(key: String): ConfigMap = error("not implemented")
 
   def getList(key: String): Seq[String] = getString(key) match {
     case None => Array[String]()

@@ -149,6 +149,8 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     }
   }
 
+  def configMap(key: String): ConfigMap = makeAttributes(key)
+
   private[configgy] def makeAttributes(key: String): Attributes = {
     if (key == "") {
       return this
