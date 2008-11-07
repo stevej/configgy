@@ -288,7 +288,8 @@ object LoggingSpec extends Specification with TestHelper {
           "node=\"net.lag\"\n" +
           "filename=\"" + folderName + "/test.log\"\n" +
           "level=\"debug\"\n" +
-          "truncate=1024\n"
+          "truncate=1024\n" +
+          "use_full_package_names = true\n"
 
         val c = new Config
         c.load(TEST_DATA)
@@ -296,10 +297,11 @@ object LoggingSpec extends Specification with TestHelper {
 
         log.getLevel mustEqual DEBUG
         log.getHandlers.length mustEqual 1
-        val h = log.getHandlers()(0)
+        val h = log.getHandlers()(0).asInstanceOf[Handler]
         h.asInstanceOf[FileHandler].filename mustEqual folderName + "/test.log"
         log.name mustEqual "net.lag"
-        h.asInstanceOf[Handler].truncateAt mustEqual 1024
+        h.truncateAt mustEqual 1024
+        h.formatter.useFullPackageNames mustEqual true
       }
 
       withTempFolder {

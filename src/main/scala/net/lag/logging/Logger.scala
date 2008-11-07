@@ -322,7 +322,8 @@ object Logger {
     val allowed = List("node", "console", "filename", "roll", "utc",
                        "truncate", "truncate_stack_traces", "level",
                        "use_parents", "syslog_host", "syslog_server_name",
-                       "syslog_use_iso_date_format")
+                       "syslog_use_iso_date_format",
+                       "use_full_package_names")
     var forbidden = config.keys.filter(x => !(allowed contains x)).toList
     if (allowNestedBlocks) {
       forbidden = forbidden.filter(x => !config.getConfigMap(x).isDefined)
@@ -393,6 +394,7 @@ object Logger {
       handler.useUtc = config.getBool("utc", false)
       handler.truncateAt = config.getInt("truncate", 0)
       handler.truncateStackTracesAt = config.getInt("truncate_stack_traces", 30)
+      handler.formatter.useFullPackageNames = config.getBool("use_full_package_names", false)
       if (! validateOnly) {
         logger.addHandler(handler)
       }
