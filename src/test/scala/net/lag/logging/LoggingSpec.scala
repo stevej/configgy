@@ -142,6 +142,14 @@ object LoggingSpec extends Specification with TestHelper {
       eat(handler.toString) mustEqual
         List("WAR [20080328-22:53:16.722] logging: I am coming for you!",
              "WAR [20080328-22:53:16.722] configgy: I am also coming for you!")
+
+      handler.asInstanceOf[StringHandler].clear
+      handler.formatter.useFullPackageNames = true
+      log1.warning("I am coming for you!")
+      log2.warning("I am also coming for you!")
+      eat(handler.toString) mustEqual
+        List("WAR [20080328-22:53:16.722] net.lag.logging: I am coming for you!",
+             "WAR [20080328-22:53:16.722] net.lag.configgy: I am also coming for you!")
     }
 
     "log level names" in {

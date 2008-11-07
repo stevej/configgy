@@ -50,6 +50,12 @@ abstract class Formatter extends javalog.Formatter {
    */
   var truncateStackTracesAt: Int = 30
 
+  /**
+   * Whether to use full package names like "com.example.thingy" or (the default) just the
+   * toplevel like "thingy".
+   */
+  var useFullPackageNames = false
+
   private var _useUtc = false
 
   /**
@@ -121,7 +127,11 @@ abstract class Formatter extends javalog.Formatter {
       case n => {
         val nameSegments = n.split("\\.")
         if (nameSegments.length >= 2) {
-          nameSegments(nameSegments.length - 2)
+          if (useFullPackageNames) {
+            nameSegments.slice(0, nameSegments.length - 1).mkString(".")
+          } else {
+            nameSegments(nameSegments.length - 2)
+          }
         } else {
           n
         }
