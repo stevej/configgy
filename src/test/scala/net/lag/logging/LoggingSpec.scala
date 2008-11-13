@@ -105,6 +105,10 @@ object LoggingSpec extends Specification with TestHelper {
       val log = Logger("")
       log.error("error!")
       eat(handler.toString) mustEqual List("ERR [20080328-22:53:16.722] (root): error!")
+      handler.asInstanceOf[StringHandler].clear
+      // must not do sprintf encoding with only one parameter.
+      log.error("error-%s")
+      eat(handler.toString) mustEqual List("ERR [20080328-22:53:16.722] (root): error-%s")
     }
 
     "do lazy message evaluation" in {

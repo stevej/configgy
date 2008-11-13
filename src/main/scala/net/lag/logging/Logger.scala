@@ -74,7 +74,7 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
   /**
    * Log a message, with sprintf formatting, at the desired level.
    */
-  def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
+  def log(level: Level, msg: String, items: Any*): Unit = log(level, null: Throwable, msg, items: _*)
 
   /**
    * Log a message, with sprintf formatting, at the desired level, and
@@ -84,7 +84,9 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     val myLevel = getLevel
     if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
       val record = new javalog.LogRecord(level, message)
-      record.setParameters(items.toArray.asInstanceOf[Array[Object]])
+      if (items.size > 0) {
+        record.setParameters(items.toArray.asInstanceOf[Array[Object]])
+      }
       record.setLoggerName(wrapped.getName)
       if (thrown != null) {
         record.setThrown(thrown)
