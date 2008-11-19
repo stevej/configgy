@@ -5,7 +5,7 @@
 
 package net.lag.logging
 
-import java.io.{BufferedReader, FileInputStream, InputStreamReader}
+import java.io._
 import java.net.{DatagramPacket, DatagramSocket, InetSocketAddress}
 import java.util.{Date, logging => javalog}
 import org.specs._
@@ -55,7 +55,8 @@ class TimeWarpingSyslogHandler(useIsoDateFormat: Boolean, server: String) extend
 }
 
 
-class ImmediatelyRollingFileHandler(filename: String, policy: Policy) extends FileHandler(filename, policy, new FileFormatter) {
+class ImmediatelyRollingFileHandler(filename: String, policy: Policy, append: Boolean)
+      extends FileHandler(filename, policy, new FileFormatter, append) {
   formatter.timeZone = "GMT-7"
 
   override def computeNextRollTime(): Long = System.currentTimeMillis + 100
@@ -179,6 +180,40 @@ object LoggingSpec extends Specification with TestHelper {
         List("CRI [20080328-22:53:16.722] whiskey: Something terrible happened th...")
     }
 
+    "honor append setting on logfiles" in {
+      withTempFolder {
+        val f = new OutputStreamWriter(new FileOutputStream(folderName + "/test.log"), "UTF-8")
+        f.write("hello!\n")
+        f.close
+
+        val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly, true)
+        val log = Logger.get("net.lag.whiskey.Train")
+        val date = new Date()
+        log.addHandler(rollHandler)
+        log.fatal("first line.")
+
+        val f2 = new BufferedReader(new InputStreamReader(new FileInputStream(folderName +
+          "/test.log")))
+        f2.readLine mustEqual "hello!"
+      }
+
+      withTempFolder {
+        val f = new OutputStreamWriter(new FileOutputStream(folderName + "/test.log"), "UTF-8")
+        f.write("hello!\n")
+        f.close
+
+        val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly, false)
+        val log = Logger.get("net.lag.whiskey.Train")
+        val date = new Date()
+        log.addHandler(rollHandler)
+        log.fatal("first line.")
+
+        val f2 = new BufferedReader(new InputStreamReader(new FileInputStream(folderName +
+          "/test.log")))
+        f2.readLine mustEqual "FAT [20080328-22:53:16.722] whiskey: first line."
+      }
+    }
+
     "write stack traces" in {
       handler.truncateStackTracesAt = 5
       val log1 = Logger.get("net.lag.whiskey.Train")
@@ -222,7 +257,7 @@ object LoggingSpec extends Specification with TestHelper {
 
 
     "roll logs on time" in {
-      val rollHandler = new FileHandler("/tmp/test.log", Hourly, new FileFormatter)
+      val rollHandler = new FileHandler("/tmp/test.log", Hourly, new FileFormatter, true)
       rollHandler.computeNextRollTime(1206769996722L) mustEqual 1206770400000L
       rollHandler.computeNextRollTime(1206770400000L) mustEqual 1206774000000L
       rollHandler.computeNextRollTime(1206774000001L) mustEqual 1206777600000L
@@ -231,7 +266,7 @@ object LoggingSpec extends Specification with TestHelper {
     // verify that at the proper time, the log file rolls and resets.
     "roll logs into new files" in {
       withTempFolder {
-        val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly)
+        val rollHandler = new ImmediatelyRollingFileHandler(folderName + "/test.log", Hourly, true)
         val log = Logger.get("net.lag.whiskey.Train")
         val date = new Date()
         log.addHandler(rollHandler)
@@ -293,7 +328,8 @@ object LoggingSpec extends Specification with TestHelper {
           "filename=\"" + folderName + "/test.log\"\n" +
           "level=\"debug\"\n" +
           "truncate=1024\n" +
-          "use_full_package_names = true\n"
+          "use_full_package_names = true\n" +
+          "append off\n"
 
         val c = new Config
         c.load(TEST_DATA)
@@ -303,6 +339,7 @@ object LoggingSpec extends Specification with TestHelper {
         log.getHandlers.length mustEqual 1
         val h = log.getHandlers()(0).asInstanceOf[Handler]
         h.asInstanceOf[FileHandler].filename mustEqual folderName + "/test.log"
+        h.asInstanceOf[FileHandler].append mustEqual false
         log.name mustEqual "net.lag"
         h.truncateAt mustEqual 1024
         h.formatter.useFullPackageNames mustEqual true

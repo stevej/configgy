@@ -325,7 +325,7 @@ object Logger {
                        "truncate", "truncate_stack_traces", "level",
                        "use_parents", "syslog_host", "syslog_server_name",
                        "syslog_use_iso_date_format",
-                       "use_full_package_names")
+                       "use_full_package_names", "append")
     var forbidden = config.keys.filter(x => !(allowed contains x)).toList
     if (allowNestedBlocks) {
       forbidden = forbidden.filter(x => !config.getConfigMap(x).isDefined)
@@ -372,7 +372,8 @@ object Logger {
         case "saturday" => Weekly(Calendar.SATURDAY)
         case x => throw new LoggingException("Unknown logfile rolling policy: " + x)
       }
-      handlers = new FileHandler(filename, policy, new FileFormatter) :: handlers
+      val fh = new FileHandler(filename, policy, new FileFormatter, config.getBool("append", true))
+      handlers = fh :: handlers
     }
 
     /* if they didn't specify a level, use "null", which is a secret
