@@ -63,6 +63,13 @@ object ConfigParserSpec extends Specification {
         "{: alpha=\"hello\" beta={beta: gamma=\"23\" toaster=\"true\" } }"
     }
 
+    "handle nested blocks in braces" in {
+      parse("alpha=\"hello\"\nbeta {\n    gamma=23\n}").toString mustEqual
+        "{: alpha=\"hello\" beta={beta: gamma=\"23\" } }"
+      parse("alpha=\"hello\"\nbeta {\n    gamma=23\n    toaster on\n}").toString mustEqual
+        "{: alpha=\"hello\" beta={beta: gamma=\"23\" toaster=\"true\" } }"
+    }
+
     "handle string lists" in {
       val data =
         "<home>\n" +
@@ -149,6 +156,22 @@ object ConfigParserSpec extends Specification {
         "<upp inherit=\"daemon\">\n" +
         "    uid = 23\n" +
         "</upp>\n"
+      val a = parse(data)
+      a.toString mustEqual "{: daemon={daemon: uid=\"16\" ulimit_fd=\"32768\" } upp={upp (inherit=daemon): uid=\"23\" } }"
+      a.getString("upp.ulimit_fd", "9") mustEqual "32768"
+      a.getString("upp.uid", "100") mustEqual "23"
+    }
+
+    "inherit using braces" in {
+      val data =
+        "daemon {\n" +
+        "    ulimit_fd = 32768\n" +
+        "    uid = 16\n" +
+        "}\n" +
+        "\n" +
+        "upp (inherit=\"daemon\") {\n" +
+        "    uid = 23\n" +
+        "}\n"
       val a = parse(data)
       a.toString mustEqual "{: daemon={daemon: uid=\"16\" ulimit_fd=\"32768\" } upp={upp (inherit=daemon): uid=\"23\" } }"
       a.getString("upp.ulimit_fd", "9") mustEqual "32768"

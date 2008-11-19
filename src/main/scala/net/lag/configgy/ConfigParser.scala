@@ -36,7 +36,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
 
   // the (~ "") is to workaround a bug where RegexParser can't handle trailing whitespace
   // FIXME: scala fixed this bug in 2.7.2.
-  def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose) ~ ""
+  def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose | sectionOpenBrace | sectionCloseBrace) ~ ""
 
   def includeFile = "include" ~> string ^^ {
     case filename: String =>
@@ -58,30 +58,40 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
   def toggle = identToken ~ trueFalse ^^ { case k ~ v => attr(prefix + k) = v }
 
   def sectionOpen = "<" ~> tagNameToken ~ rep(tagAttribute) <~ ">" ^^ {
-    case name ~ attrList =>
-      val parent = if (sections.size > 0) attr.makeAttributes(sections.mkString(".")) else attr
-      sections += name
-      prefix = sections.mkString("", ".", ".")
-      val newBlock = attr.makeAttributes(sections.mkString("."))
-      for ((k, v) <- attrList) k match {
-        case "inherit" => newBlock.inheritFrom(if (parent.getConfigMap(v).isDefined) parent.makeAttributes(v) else attr.makeAttributes(v))
-        case _ => throw new ParseException("Unknown block modifier")
-      }
+    case name ~ attrList => openBlock(name, attrList)
   }
   def tagAttribute = opt(whiteSpace) ~> (tagNameToken <~ "=") ~ string ^^ { case k ~ v => (k, v) }
+  def sectionClose = "</" ~> tagNameToken <~ ">" ^^ { name => closeBlock(Some(name)) }
 
-  def sectionClose = "</" ~> tagNameToken <~ ">" ^^ { x =>
+  def sectionOpenBrace = tagNameToken ~ opt("(" ~> rep(tagAttribute) <~ ")") <~ "{" ^^ {
+    case name ~ attrListOption => openBlock(name, attrListOption.getOrElse(Nil))
+  }
+  def sectionCloseBrace = "}" ^^ { x => closeBlock(None) }
+
+  private def openBlock(name: String, attrList: List[(String, String)]) = {
+    val parent = if (sections.size > 0) attr.makeAttributes(sections.mkString(".")) else attr
+    sections += name
+    prefix = sections.mkString("", ".", ".")
+    val newBlock = attr.makeAttributes(sections.mkString("."))
+    for ((k, v) <- attrList) k match {
+      case "inherit" => newBlock.inheritFrom(if (parent.getConfigMap(v).isDefined) parent.makeAttributes(v) else attr.makeAttributes(v))
+      case _ => throw new ParseException("Unknown block modifier")
+    }
+  }
+
+  private def closeBlock(name: Option[String]) = {
     if (sections.isEmpty) {
-      failure("dangling close tag: " + x)
+      failure("dangling close tag")
     } else {
       val last = sections.pop
-      if (last != x) {
-        failure("got closing tag for " + x + ", expected " + last)
+      if (name.isDefined && last != name.get) {
+        failure("got closing tag for " + name.get + ", expected " + last)
       } else {
         prefix = sections.mkString(".")
       }
     }
   }
+
 
   def value: Parser[Any] = number | string | stringList | trueFalse
   def number = numberToken ^^ { x => if (x.contains('.')) x else x.toInt }
