@@ -10,7 +10,7 @@
                 <artifact pattern="http://www.lag.net/repo/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
             </url>
         </chain>
-        <filesystem name="push" m2compatible="true" transactional="false">
+        <filesystem name="local" m2compatible="true" transactional="false">
             <artifact pattern="${basedir}/dist/repo/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]" />
         </filesystem>
     </resolvers>
