@@ -9,14 +9,6 @@ import scala.util.matching.Regex
 
 
 final class ConfiggyString(wrapped: String) {
-  import extensions._
-
-  /**
-   * Scala does not yet (Dec 2007) support java's String.format natively.
-   * Fake it by building the Object[] manually for a handful of params.
-   */
-  def format(items: Any*): String = String.format(wrapped, items.toArray.asInstanceOf[Array[Object]])
-
   /**
    * For every section of a string that matches a regular expression, call
    * a function to determine a replacement (as in python's
@@ -102,10 +94,10 @@ final class ConfiggyString(wrapped: String) {
    */
   def unquoteC() = {
     regexSub(UNQUOTE_RE) { m =>
-      val ch = m.group(0).charAt(0) match {
+      val ch = m.group(1).charAt(0) match {
         // holy crap! this is terrible:
-        case 'u' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
-        case 'x' => Character.valueOf(Integer.valueOf(m.group(0).substring(1), 16).asInstanceOf[Int].toChar)
+        case 'u' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
+        case 'x' => Character.valueOf(Integer.valueOf(m.group(1).substring(1), 16).asInstanceOf[Int].toChar)
         case 'r' => '\r'
         case 'n' => '\n'
         case 't' => '\t'

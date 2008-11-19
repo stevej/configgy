@@ -285,6 +285,14 @@ There are a handful of options to tune logging more directly:
     set ``off`` to use old-style BSD date format in syslog messages
     (default: on)
 
+``use_full_package_names``
+    set ``on`` to use full package names in log lines ("net.lag.configgy")
+    instead of the toplevel node ("configgy") (default: off)
+
+``append``
+    set ``off`` to create a new logfile each time the app starts (default:
+    on, meaning to append to any existing logfile)
+
 The logging options are usually set on the root node of java's "logging tree",
 at "". You can set options or logging handlers at other nodes by putting them
 in config blocks inside ``<log>``. For example::

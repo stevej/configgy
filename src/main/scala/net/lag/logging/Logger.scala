@@ -74,7 +74,7 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
   /**
    * Log a message, with sprintf formatting, at the desired level.
    */
-  def log(level: Level, msg: String, items: Any*): Unit = log(level, null.asInstanceOf[Throwable], msg, items: _*)
+  def log(level: Level, msg: String, items: Any*): Unit = log(level, null: Throwable, msg, items: _*)
 
   /**
    * Log a message, with sprintf formatting, at the desired level, and
@@ -84,7 +84,9 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     val myLevel = getLevel
     if ((myLevel == null) || (level.intValue >= myLevel.intValue)) {
       val record = new javalog.LogRecord(level, message)
-      record.setParameters(items.toArray.asInstanceOf[Array[Object]])
+      if (items.size > 0) {
+        record.setParameters(items.toArray.asInstanceOf[Array[Object]])
+      }
       record.setLoggerName(wrapped.getName)
       if (thrown != null) {
         record.setThrown(thrown)
@@ -322,7 +324,8 @@ object Logger {
     val allowed = List("node", "console", "filename", "roll", "utc",
                        "truncate", "truncate_stack_traces", "level",
                        "use_parents", "syslog_host", "syslog_server_name",
-                       "syslog_use_iso_date_format")
+                       "syslog_use_iso_date_format",
+                       "use_full_package_names", "append")
     var forbidden = config.keys.filter(x => !(allowed contains x)).toList
     if (allowNestedBlocks) {
       forbidden = forbidden.filter(x => !config.getConfigMap(x).isDefined)
@@ -369,7 +372,8 @@ object Logger {
         case "saturday" => Weekly(Calendar.SATURDAY)
         case x => throw new LoggingException("Unknown logfile rolling policy: " + x)
       }
-      handlers = new FileHandler(filename, policy, new FileFormatter) :: handlers
+      val fh = new FileHandler(filename, policy, new FileFormatter, config.getBool("append", true))
+      handlers = fh :: handlers
     }
 
     /* if they didn't specify a level, use "null", which is a secret
@@ -393,6 +397,7 @@ object Logger {
       handler.useUtc = config.getBool("utc", false)
       handler.truncateAt = config.getInt("truncate", 0)
       handler.truncateStackTracesAt = config.getInt("truncate_stack_traces", 30)
+      handler.formatter.useFullPackageNames = config.getBool("use_full_package_names", false)
       if (! validateOnly) {
         logger.addHandler(handler)
       }

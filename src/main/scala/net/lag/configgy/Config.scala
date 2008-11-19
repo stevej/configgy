@@ -237,6 +237,7 @@ class Config extends ConfigMap {
 
   def getString(key: String): Option[String] = root.getString(key)
   def getConfigMap(key: String): Option[ConfigMap] = root.getConfigMap(key)
+  def configMap(key: String): ConfigMap = root.configMap(key)
   def getList(key: String): Seq[String] = root.getList(key)
   def setString(key: String, value: String): Unit = root.setString(key, value)
   def setList(key: String, value: Seq[String]): Unit = root.setList(key, value)
@@ -293,6 +294,17 @@ object Config {
       case e: Throwable =>
         Logger.get.critical(e, "Failed to load config resource '%s'", name)
         throw e
+    }
+    config
+  }
+
+  /**
+   * Create a Config object from a map of String keys and String values.
+   */
+  def fromMap(m: Map[String, String]) = {
+    val config = new Config
+    for ((k, v) <- m.elements) {
+      config(k) = v
     }
     config
   }
