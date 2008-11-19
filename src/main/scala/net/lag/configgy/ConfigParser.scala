@@ -34,9 +34,8 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
   val tagNameToken: Parser[String] = """[a-zA-Z][-\w]*""".r
 
 
-  // the (~ "") is to workaround a bug where RegexParser can't handle trailing whitespace
-  // FIXME: scala fixed this bug in 2.7.2.
-  def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose | sectionOpenBrace | sectionCloseBrace) ~ ""
+  def root = rep(includeFile | assignment | toggle | sectionOpen | sectionClose |
+                 sectionOpenBrace | sectionCloseBrace)
 
   def includeFile = "include" ~> string ^^ {
     case filename: String =>
