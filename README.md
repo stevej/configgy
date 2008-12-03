@@ -94,7 +94,8 @@ options, and how to use the library in more detail.
 
 The config file format is simple and clean. It borrows from XML, but isn't
 XML. It has a few advanced features, but limits itself to representing a
-nested structure of key/value pairs. It is always in UTF-8.
+nested structure of key/value pairs. It is always in UTF-8. Key names are
+always case-insensitive.
 
 Values are set like so:
 
