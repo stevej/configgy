@@ -130,7 +130,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     if (monitored) {
       attr.setMonitored
     }
-    cells += Pair(key, new AttributesCell(attr))
+    cells += Pair(key.toLowerCase, new AttributesCell(attr))
     attr
   }
 

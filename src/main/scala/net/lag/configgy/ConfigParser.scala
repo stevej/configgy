@@ -86,7 +86,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
       if (name.isDefined && last != name.get) {
         failure("got closing tag for " + name.get + ", expected " + last)
       } else {
-        prefix = sections.mkString(".")
+        prefix = if (sections.isEmpty) "" else sections.mkString("", ".", ".")
       }
     }
   }

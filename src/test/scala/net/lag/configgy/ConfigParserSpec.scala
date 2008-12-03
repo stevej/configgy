@@ -199,16 +199,90 @@ object ConfigParserSpec extends Specification {
       a.getString("daemon.inner.slac.uid", "100") mustEqual "16"
     }
 
-    "handle a complex case" in {
+    "handle camel case id in block" in {
       val data =
         "<daemon>\n" +
-        "    useless = 3\n" +
+        "    useLess = 3\n" +
+        "</daemon>\n"
+      val exp =
+        "{: daemon={daemon: useless=\"3\" } }"
+      val a = parse(data)
+      a.toString mustEqual exp
+      a.getString("daemon.useLess", "14") mustEqual "3"
+    }
+
+    "handle dash block" in {
+      val data =
+        "<daemon>\n" +
+        "    <base-dat>\n" +
+        "        ulimit_fd = 32768\n" +
+        "    </base-dat>\n" +
+        "</daemon>\n"
+      val exp =
+        "{: daemon={daemon: base-dat={daemon.base-dat: ulimit_fd=\"32768\" } } }"
+      val a = parse(data)
+      a.toString mustEqual exp
+      a.getString("daemon.base-dat.ulimit_fd", "14") mustEqual "32768"
+    }
+
+    "handle camelcase block" in {
+      val data =
+        "<daemon>\n" +
+        "    <baseDat>\n" +
+        "        ulimit_fd = 32768\n" +
+        "    </baseDat>\n" +
+        "</daemon>\n"
+      val exp =
+        "{: daemon={daemon: basedat={daemon.baseDat: ulimit_fd=\"32768\" } } }"
+      val a = parse(data)
+      a.toString mustEqual exp
+      a.getString("daemon.baseDat.ulimit_fd", "14") mustEqual "32768"
+    }
+
+    "handle assignment after block" in {
+      val data =
+        "<daemon>\n" +
         "    <base>\n" +
         "        ulimit_fd = 32768\n" +
         "    </base>\n" +
+        "    useless = 3\n" +
+        "</daemon>\n"
+      val exp =
+        "{: daemon={daemon: base={daemon.base: ulimit_fd=\"32768\" } useless=\"3\" } }"
+      val a = parse(data)
+      a.toString mustEqual exp
+      a.getString("daemon.useless", "14") mustEqual "3"
+      a.getString("daemon.base.ulimit_fd", "14") mustEqual "32768"
+    }
+
+    "two consecutive groups" in {
+      val data =
+        "<daemon>\n" +
+        "    useless = 3\n" +
         "</daemon>\n" +
         "\n" +
-        "<upp inherit=\"daemon.base\">\n" +
+        "<upp inherit=\"daemon\">\n" +
+        "    uid = 16\n" +
+        "</upp>\n"
+      val exp =
+        "{: daemon={daemon: useless=\"3\" } " +
+        "upp={upp (inherit=daemon): uid=\"16\" } }"
+      val a = parse(data)
+      a.toString mustEqual exp
+      a.getString("daemon.useless", "14") mustEqual "3"
+      a.getString("upp.uid", "1") mustEqual "16"
+    }
+
+   "handle a complex case" in {
+      val data =
+        "<daemon>\n" +
+        "    useLess = 3\n" +
+        "    <base-dat>\n" +
+        "        ulimit_fd = 32768\n" +
+        "    </base-dat>\n" +
+        "</daemon>\n" +
+        "\n" +
+        "<upp inherit=\"daemon.base-dat\">\n" +
         "    uid = 16\n" +
         "    <alpha inherit=\"upp\">\n" +
         "        name=\"alpha\"\n" +
@@ -216,14 +290,15 @@ object ConfigParserSpec extends Specification {
         "    <beta inherit=\"daemon\">\n" +
         "        name=\"beta\"\n" +
         "    </beta>\n" +
+        "    someInt=1\n" +
         "</upp>\n"
       val exp =
-        "{: daemon={daemon: base={daemon.base: ulimit_fd=\"32768\" } useless=\"3\" } " +
-        "upp={upp (inherit=daemon.base): alpha={upp.alpha (inherit=upp): name=\"alpha\" } " +
-        "beta={upp.beta (inherit=daemon): name=\"beta\" } uid=\"16\" } }"
+        "{: daemon={daemon: base-dat={daemon.base-dat: ulimit_fd=\"32768\" } useless=\"3\" } " +
+        "upp={upp (inherit=daemon.base-dat): alpha={upp.alpha (inherit=upp): name=\"alpha\" } " +
+        "beta={upp.beta (inherit=daemon): name=\"beta\" } someint=\"1\" uid=\"16\" } }"
       val a = parse(data)
       a.toString mustEqual exp
-      a.getString("daemon.useless", "14") mustEqual "3"
+      a.getString("daemon.useLess", "14") mustEqual "3"
       a.getString("upp.uid", "1") mustEqual "16"
       a.getString("upp.ulimit_fd", "1024") mustEqual "32768"
       a.getString("upp.name", "23") mustEqual "23"
@@ -233,6 +308,7 @@ object ConfigParserSpec extends Specification {
       a.getString("upp.beta.useless", "") mustEqual "3"
       a.getString("upp.alpha.useless", "") mustEqual ""
       a.getString("upp.beta.ulimit_fd", "") mustEqual ""
+      a.getString("upp.someInt", "4") mustEqual "1"
     }
   }
 }
