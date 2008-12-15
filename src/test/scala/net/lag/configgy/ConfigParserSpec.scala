@@ -83,6 +83,15 @@ object ConfigParserSpec extends Specification {
       a.getList("home.regions")(1) mustEqual "southeast"
     }
 
+    "handle camelCase lists" in {
+      val data =
+        "<daemon>\n" +
+        "    useLess = [\"one\",\"two\"]\n" +
+        "</daemon>\n"
+      val a = parse(data)
+      a.getList("daemon.useLess").toList mustEqual List("one", "two")
+    }
+
     "import files" in {
       val data1 =
         "toplevel=\"skeletor\"\n" +

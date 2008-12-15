@@ -198,7 +198,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
       case Some((attr, name)) => attr.setList(name, value)
       case None => cells.get(key.toLowerCase) match {
         case Some(AttributesCell(x)) => throw new ConfigException("Illegal key " + key)
-        case _ => cells.put(key, new StringListCell(value.toArray))
+        case _ => cells.put(key.toLowerCase, new StringListCell(value.toArray))
       }
     }
   }
