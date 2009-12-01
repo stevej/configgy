@@ -29,7 +29,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
   override val whiteSpace = """(\s+|#[^\n]*\n)+""".r
   val numberToken: Parser[String] = """-?\d+(\.\d+)?""".r
   val stringToken: Parser[String] = """([^\\\"]|\\[^ux]|\\\n|\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F]{2})*""".r
-  val identToken: Parser[String] = """([a-zA-Z_][-\w]*)(\.[a-zA-Z_][-\w]*)*""".r
+  val identToken: Parser[String] = """([\da-zA-Z_][-\w]*)(\.[a-zA-Z_][-\w]*)*""".r
   val assignToken: Parser[String] = """=|\?=""".r
   val tagNameToken: Parser[String] = """[a-zA-Z][-\w]*""".r
 
